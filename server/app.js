@@ -37,7 +37,7 @@ export async function createApp(cfg) {
   try {
     await withDb(db,async()=>{
       await seedCatalog(db);
-      for (const co of await db.prepare('SELECT id FROM companies').all()) await snapshotStock(db,co.id);
+      for (const co of await db.prepare('SELECT id FROM companies WHERE deleted_at IS NULL').all()) await snapshotStock(db,co.id);
       if(cfg.databaseUrl && await countUsers(db)===0){
         if(!cfg.adminPassword) throw new Error('Define ADMIN_PASSWORD para crear el primer administrador de forma segura.');
         await tx(db,async()=>{const u=await createUser(db,{username:cfg.adminUsername,full_name:cfg.adminName,role:'master',password:cfg.adminPassword}); await audit(db,u,'crear','user',u.id,'Administrador inicial creado desde configuración del servidor');});

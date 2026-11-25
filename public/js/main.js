@@ -1,17 +1,18 @@
-import { get, post } from './api.js?v=0.4.3';
-import { state, selectCompany, can } from './state.js?v=0.4.3';
-import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.3';
-import dashboardPage from './pages/dashboard.js?v=0.4.3';
-import inventoryPage from './pages/inventory.js?v=0.4.3';
-import itemPage from './pages/item.js?v=0.4.3';
-import categoriesPage from './pages/categories.js?v=0.4.3';
-import companiesPage, { overviewPage } from './pages/companies.js?v=0.4.3';
-import usersPage from './pages/users.js?v=0.4.3';
-import { membersPage, requestsPage } from './pages/members.js?v=0.4.3';
+import { get, post } from './api.js?v=0.4.5';
+import { state, selectCompany, can } from './state.js?v=0.4.5';
+import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.5';
+import dashboardPage from './pages/dashboard.js?v=0.4.5';
+import inventoryPage from './pages/inventory.js?v=0.4.5';
+import itemPage from './pages/item.js?v=0.4.5';
+import categoriesPage from './pages/categories.js?v=0.4.5';
+import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.4.5';
+import usersPage from './pages/users.js?v=0.4.5';
+import { membersPage, requestsPage } from './pages/members.js?v=0.4.5';
 
 const root = document.getElementById('app');
 
 const ROUTES = [
+  [/^#\/companies\/trash$/, trashPage, 'companies'],
   [/^#\/requests$/, requestsPage, 'requests'],
   [/^#\/companies\/(\d+)\/members$/, membersPage, 'companies'],
   [/^#\/companies$/, companiesPage, 'companies'],
@@ -80,7 +81,7 @@ let shell, content, navLinks;
 
 async function renderShell() {
   try { state.companies = await get('/api/companies'); } catch(e){return renderFatal(e.message);}
-  if(!state.companies.length&&!['#/dashboard','#/companies','#/requests','#/users'].includes(location.hash))location.hash='#/dashboard';
+  if(!state.companies.length&&!['#/dashboard','#/companies','#/companies/trash','#/requests','#/users'].includes(location.hash))location.hash='#/dashboard';
   const stored=Number(sessionStorage.getItem('stagehub-company') || 1);
   state.companyId=state.companies.some(c=>c.id===stored)?stored:state.companies[0]?.id || 0;
   navLinks = {};
@@ -107,11 +108,21 @@ async function renderShell() {
       content),
     h('div', { class: 'scrim', onclick: () => shell.classList.remove('drawer') }));
   clear(root).append(shell);
-  route();
+  route(true);
 }
 
-async function route() {
+async function route(skipRefresh=false) {
   if (!state.user || !content || !navLinks) return;
+  if(skipRefresh!==true){
+    try{
+      const status=await get('/api/auth/status');
+      if(!status.user){state.user=null;return renderAuth('login');}
+      const companies=await get('/api/companies');
+      const changed=state.user.role!==status.user.role||state.user.full_name!==status.user.full_name||JSON.stringify(state.companies.map(c=>[c.id,c.member_role,c.name]))!==JSON.stringify(companies.map(c=>[c.id,c.member_role,c.name]));
+      state.user=status.user;
+      if(changed){state.companies=companies;return renderShell();}
+    }catch(e){toast(e.message,'error');}
+  }
   const hash = location.hash || '#/dashboard';
   const match = ROUTES.map(([re, page, nav]) => [re.exec(hash), page, nav]).find(([m]) => m);
   if (!match) { location.hash = '#/dashboard'; return; }

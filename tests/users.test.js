@@ -43,8 +43,13 @@ test('registro, aprobación, permisos reales por rol, empresas visibles y revoca
   assert.equal((await call('reader','GET','/api/items',undefined,co.json.id)).status,200);
   for(const [method,url,body] of [['POST','/api/items',{}],['PUT','/api/companies/1',{name:'No'}],['GET','/api/users'],['PUT',`/api/users/${u.id}`,{...approval,role:'master'}]])assert.equal((await call('reader',method,url,body)).status,403);
   assert.equal((await call('master','PUT',`/api/users/${u.id}`,{...approval,role:'admin'})).status,200);
-  assert.equal((await call('reader','GET','/api/items')).status,401);
-  assert.equal((await call('reader','POST','/api/auth/login',{username:email,password})).json.user.role,'admin');
+  assert.equal((await call('reader','GET','/api/items')).status,200);
+  assert.equal((await call('reader','GET','/api/auth/status')).json.user.role,'admin');
+  assert.equal((await call('master','PUT',`/api/users/${u.id}`,{...approval,role:'master'})).status,200);
+  assert.equal((await call('reader','GET','/api/users')).status,200);
+  assert.equal((await call('master','PUT',`/api/users/${u.id}`,{...approval,role:'admin'})).status,200);
+  assert.equal((await call('reader','GET','/api/users')).status,403);
+  assert.equal((await call('reader','GET','/api/auth/status')).json.user.role,'admin');
   assert.equal((await call('master','PUT',`/api/companies/${co.json.id}/members/${u.id}`,{role:'inventory'})).status,200);
   const cat=(await call('reader','GET','/api/categories')).json[0];
   assert.equal((await call('reader','POST','/api/items',{name:'Equipo de prueba',category_id:cat.id,tracking_mode:'cantidad',qty_total:2},co.json.id)).status,201);

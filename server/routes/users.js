@@ -78,7 +78,7 @@ export function registerUserRoutes(router,{db,cfg}) {
       if(n<=1)throw new HttpError(409,'Debe quedar al menos un Master activo');
     }
     await db.prepare('UPDATE users SET full_name=?,role=?,access_role=?,approval_status=?,active=? WHERE id=?').run(name,legacyRole(role),role,status,bool(active),id);
-    if(role!==effectiveRole(u)||!active||status!==u.approval_status)await db.prepare('DELETE FROM sessions WHERE user_id=?').run(id);
+    if(!active)await db.prepare('DELETE FROM sessions WHERE user_id=?').run(id);
     await audit(db,c.user,'editar','user',id,`Permisos de ${u.full_name}: ${ROLE_LABELS[role]} / ${status}${active?'':' (sin acceso)'}`,{role,status,active});
     return listed(await db.prepare('SELECT * FROM users WHERE id=?').get(id));
   }));

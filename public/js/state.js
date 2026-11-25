@@ -6,7 +6,7 @@ export function can(perm,id=state.companyId){
  if(perm==='inventory:read')return !!role;
  if(['inventory:write','audit:read'].includes(perm))return ['inventory','manager','owner'].includes(role);
  if(perm==='members:write')return ['members','manager','owner'].includes(role);
- if(perm==='company:edit')return role==='owner';
+ if(['company:edit','company:delete'].includes(perm))return role==='owner';
  return false;
 }
 export const companyName = () => state.companies.find(c=>c.id===state.companyId)?.name || 'Empresa principal';

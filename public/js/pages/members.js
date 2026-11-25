@@ -1,6 +1,6 @@
-import { get,post,put,del } from '../api.js?v=0.4.3';
-import { state,can } from '../state.js?v=0.4.3';
-import { h,field,guarded,toast,confirmDialog,clear } from '../ui.js?v=0.4.3';
+import { get,post,put,del } from '../api.js?v=0.4.5';
+import { state,can } from '../state.js?v=0.4.5';
+import { h,field,guarded,toast,confirmDialog,clear } from '../ui.js?v=0.4.5';
 export const roles={reader:'Solo lectura',inventory:'Gestión de inventario',members:'Gestión de usuarios (inventario solo lectura)',manager:'Inventario y usuarios',owner:'Propietario',master:'Master global'};
 export const roleSelect=(value,options=['reader','inventory','members','manager'])=>h('select',{value},options.map(r=>h('option',{value:r},roles[r])));
 export async function requestsPage(el){
@@ -12,7 +12,7 @@ export async function membersPage(el,[id]){
  const co=state.companies.find(c=>c.id===Number(id));if(!co)throw new Error('Empresa no disponible');
  const master=state.user.role==='master', actor=co.member_role;
  if(!master&&!['owner','members','manager'].includes(actor))throw new Error('No tienes permiso para gestionar miembros');
- const options=master||actor==='owner'?['reader','inventory','members','manager']:['reader','inventory'];
+ const options=master||['owner','manager'].includes(actor)?['reader','inventory','members','manager']:['reader','members'];
  const members=await get(`/api/companies/${id}/members`), invitations=await get(`/api/companies/${id}/invitations`);
  const email=h('input',{type:'email',required:true,maxlength:254,placeholder:'correo@ejemplo.cl'}), role=roleSelect('reader',options), err=h('div',{class:'error-box',hidden:true});
  const send=h('button',{class:'btn primary',type:'submit'},'Enviar solicitud');

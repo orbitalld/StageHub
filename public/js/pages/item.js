@@ -1,7 +1,7 @@
-import { get, post, put, del } from '../api.js?v=0.4.3';
-import { can, state, companyName, selectCompany } from '../state.js?v=0.4.3';
-import { h, icon, badge, field, modal, guarded, toast, confirmDialog, fmtNum, fmtMoney, fmtDate, fmtDateTime, MODE_LABEL, STOCK_STATUS, UNIT_STATUS, clear } from '../ui.js?v=0.4.3';
-import { openItemForm } from './item-form.js?v=0.4.3';
+import { get, post, put, del } from '../api.js?v=0.4.5';
+import { can, state, companyName, selectCompany } from '../state.js?v=0.4.5';
+import { h, icon, badge, field, modal, guarded, toast, confirmDialog, fmtNum, fmtMoney, fmtDate, fmtDateTime, MODE_LABEL, STOCK_STATUS, UNIT_STATUS, clear } from '../ui.js?v=0.4.5';
+import { openItemForm } from './item-form.js?v=0.4.5';
 
 export default async function itemPage(el, [idStr]) {
   const id = Number(idStr);

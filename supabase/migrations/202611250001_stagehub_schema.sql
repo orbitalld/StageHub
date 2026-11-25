@@ -194,6 +194,11 @@ CREATE INDEX IF NOT EXISTS company_members_user ON stagehub.company_members(user
 CREATE INDEX IF NOT EXISTS company_inv_recipient ON stagehub.company_invitations(recipient_id,status);
 CREATE TABLE IF NOT EXISTS stagehub.company_photo_uploads (photo TEXT PRIMARY KEY, company_id bigint NOT NULL REFERENCES stagehub.companies(id) ON DELETE CASCADE);
 
+-- v0.4.5: papelera de empresas, conservando sus relaciones y archivos.
+ALTER TABLE stagehub.companies ADD COLUMN IF NOT EXISTS deleted_at timestamptz;
+ALTER TABLE stagehub.companies ADD COLUMN IF NOT EXISTS deleted_by bigint REFERENCES stagehub.users(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_companies_deleted ON stagehub.companies(deleted_at);
+
 REVOKE ALL ON ALL TABLES IN SCHEMA stagehub FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA stagehub FROM PUBLIC, anon, authenticated;
 COMMIT;

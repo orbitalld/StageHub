@@ -19,10 +19,46 @@ test('Acceso por empresa, creación, solicitudes, permisos delegados, fotos y re
  assert.equal((await get('ben',`/uploads/${photo}`)).status,404);assert.equal((await post('ben','/api/items',{name:'Foto ajena',category_id:cat,photo},cb)).status,422);assert.equal((await get('ben',`/api/items/${item.id}`,cb)).status,404);assert.equal((await get('ben',`/api/items/${item.id}`,ca)).status,403);
  const invite=await post('ana',`/api/companies/${ca}/invitations`,{email:'CAR@example.com',role:'reader'});assert.equal(invite.status,201);assert.equal((await get('car','/api/requests')).json.length,1);assert.equal((await get('dan','/api/requests')).json.length,0);assert.equal((await post('dan',`/api/requests/${invite.json.id}/respond`,{decision:'accepted'})).status,404);assert.equal((await get('car','/api/items',ca)).status,403);assert.equal((await post('car',`/api/requests/${invite.json.id}/respond`,{decision:'accepted',role:'owner'})).status,200);assert.equal((await get('car','/api/companies')).json[0].member_role,'reader');assert.equal((await get('car',`/uploads/${photo}`)).status,200);assert.equal((await post('car','/api/items',{name:'No'},ca)).status,403);assert.equal((await post('car',`/api/requests/${invite.json.id}/respond`,{decision:'accepted'})).status,404);
  assert.equal((await put('ana',`/api/companies/${ca}/members/${ids.car}`,{role:'owner'})).status,422);assert.equal((await put('ana',`/api/companies/${ca}/members/${ids.car}`,{role:'inventory'})).status,200);assert.equal((await post('car','/api/items',{name:'Cable',category_id:cat,tracking_mode:'cantidad',qty_total:1},ca)).status,201);assert.equal((await get('car',`/api/companies/${ca}/members`)).status,403);
- assert.equal((await put('ana',`/api/companies/${ca}/members/${ids.car}`,{role:'manager'})).status,200);assert.equal((await put('car',`/api/companies/${ca}/members/${ids.ana}`,{role:'reader'})).status,403);assert.equal((await post('car',`/api/companies/${ca}/invitations`,{email:'dan@example.com',role:'manager'})).status,403);const i2=await post('car',`/api/companies/${ca}/invitations`,{email:'dan@example.com',role:'inventory'});assert.equal(i2.status,201);assert.equal((await put('ana',`/api/companies/${ca}/members/${ids.car}`,{role:'reader'})).status,200);assert.equal((await post('dan',`/api/requests/${i2.json.id}/respond`,{decision:'accepted'})).status,409);assert.equal((await del('ana',`/api/companies/${ca}/invitations/${i2.json.id}`)).status,204);
+ assert.equal((await put('ana',`/api/companies/${ca}/members/${ids.car}`,{role:'manager'})).status,200);assert.equal((await put('car',`/api/companies/${ca}/members/${ids.ana}`,{role:'reader'})).status,403);const same=await post('car',`/api/companies/${ca}/invitations`,{email:'dan@example.com',role:'manager'});assert.equal(same.status,201);assert.equal((await del('car',`/api/companies/${ca}/invitations/${same.json.id}`)).status,204);const i2=await post('car',`/api/companies/${ca}/invitations`,{email:'dan@example.com',role:'inventory'});assert.equal(i2.status,201);assert.equal((await put('ana',`/api/companies/${ca}/members/${ids.car}`,{role:'reader'})).status,200);assert.equal((await post('dan',`/api/requests/${i2.json.id}/respond`,{decision:'accepted'})).status,409);assert.equal((await del('ana',`/api/companies/${ca}/invitations/${i2.json.id}`)).status,204);
  const i3=await post('ana',`/api/companies/${ca}/invitations`,{email:'dan@example.com',role:'reader'});assert.equal((await post('dan',`/api/requests/${i3.json.id}/respond`,{decision:'declined'})).status,200);assert.equal((await get('dan','/api/items',ca)).status,403);
  assert.equal((await put('ana',`/api/companies/${ca}/members/${ids.car}`,{role:'members'})).status,200);assert.equal((await get('car',`/api/companies/${ca}/members`)).status,200);assert.equal((await post('car','/api/items',{name:'No'},ca)).status,403);
  assert.equal((await put('master',`/api/companies/${cb}/members/${ids.car}`,{role:'inventory'})).status,200);assert.equal((await get('car','/api/companies')).json.length,2);assert.equal((await get('master',`/api/users/${ids.car}/companies`)).json.length,2);assert.equal((await del('ana',`/api/companies/${ca}/members/${ids.car}`)).status,204);assert.equal((await get('car',`/uploads/${photo}`)).status,404);assert.equal((await get('car','/api/items',ca)).status,403);assert.equal((await get('car','/api/items',cb)).status,200);
+ // Un gestor de usuarios puede delegar su mismo permiso, pero no permisos de inventario.
+ assert.equal((await put('master',`/api/companies/${ca}/members/${ids.car}`,{role:'members'})).status,200);
+ assert.equal((await put('master',`/api/companies/${ca}/members/${ids.dan}`,{role:'members'})).status,200);
+ assert.equal((await put('car',`/api/companies/${ca}/members/${ids.dan}`,{role:'members'})).status,200);
+ assert.equal((await put('car',`/api/companies/${ca}/members/${ids.dan}`,{role:'inventory'})).status,403);
+ assert.equal((await put('car',`/api/companies/${ca}/members/${ids.dan}`,{role:'manager'})).status,403);
+ assert.equal((await put('car',`/api/companies/${ca}/members/${ids.ana}`,{role:'reader'})).status,403);
+ assert.equal((await del('car',`/api/companies/${ca}`)).status,403);
+ assert.equal((await del('car',`/api/companies/${ca}/members/${ids.dan}`)).status,204);
+ const pending=await post('car',`/api/companies/${ca}/invitations`,{email:'dan@example.com',role:'members'});assert.equal(pending.status,201);
+ const logo=await post('master',`/api/companies/${ca}/logo`,png);assert.equal(logo.status,200);
+ assert.equal((await del('ana',`/api/companies/${ca}`)).status,204);
+ assert.equal((await get('ana','/api/companies')).json.length,0);
+ assert.equal((await get('master','/api/companies')).json.length,2);
+ assert.equal((await get('master','/api/companies/trash')).json[0].id,ca);
+ assert.equal((await get('ana','/api/companies/trash')).status,403);
+ assert.equal((await get('car','/api/items',ca)).status,404);
+ assert.equal((await get('master','/api/items',ca)).status,404);
+ assert.equal((await get('car',`/uploads/${photo}`)).status,404);
+ assert.equal((await get('master',`/uploads/${logo.json.logo}`)).status,404);
+ assert.equal((await get('dan','/api/requests')).json.length,0);
+ assert.equal((await post('dan',`/api/requests/${pending.json.id}/respond`,{decision:'accepted'})).status,404);
+ assert.equal((await post('ana',`/api/companies/${ca}/restore`)).status,403);
+ assert.equal((await post('ana','/api/companies',{name:'Empresa Ana 2'})).status,409);
+ const other=(await post('ben','/api/items',{name:'Equipo B',category_id:cat,tracking_mode:'cantidad',qty_total:1},cb)).json;assert.ok(other.id);
+ assert.equal((await post('master',`/api/items/${other.id}/transfer`,{company_id:ca},cb)).status,404);
+ // Reinicio con empresa archivada, seguido de recuperación por el Master.
+ await app.close();app=null;await start();
+ assert.equal((await get('master','/api/companies/trash')).json[0].id,ca);
+ assert.equal((await post('master',`/api/companies/${ca}/restore`)).status,200);
+ assert.equal((await get('master','/api/companies/trash')).json.length,0);
+ assert.equal((await get('car',`/uploads/${photo}`)).status,200);
+ assert.equal((await get('master',`/uploads/${logo.json.logo}`)).status,200);
+ assert.equal((await get('master','/api/items',ca)).json.total,2);
+ assert.equal((await get('dan','/api/requests')).json.length,0);
+ assert.equal((await del('ana',`/api/companies/${ca}/members/${ids.car}`)).status,204);
  await app.close();app=null;await start();assert.equal((await get('ana','/api/companies')).json[0].id,ca);assert.equal((await get('car','/api/companies')).json[0].id,cb);assert.equal((await get('master','/api/items',ca)).json.total,2);
  }finally{if(app)await app.close();fs.rmSync(dir,{recursive:true,force:true});}
 });

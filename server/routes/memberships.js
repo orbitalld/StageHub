@@ -2,11 +2,11 @@ import { HttpError } from '../http.js';
 import { tx } from '../db.js';
 import { V } from '../validate.js';
 import { audit } from '../audit.js';
-import { companyRole, requireCompany, isMaster } from '../company-access.js';
+import { companyRole, requireCompany, canManageMember } from '../company-access.js';
 const roles=['reader','inventory','members','manager'];
 const idOf=v=>{const n=Number(v);if(!Number.isSafeInteger(n)||n<1)throw new HttpError(400,'Identificador inválido');return n;};
 export function registerMembershipRoutes(router,{db}){
- const allowed=(actor,target)=>actor==='master'||(actor==='owner'&&target!=='owner'&&target!=='master')||(['manager','members'].includes(actor)&&['reader','inventory'].includes(target));
+ const allowed=canManageMember;
  const member=(co,uid)=>db.prepare('SELECT member_role FROM company_members WHERE company_id=? AND user_id=?').get(co,uid);
  const checkRole=(body,actor)=>{const role=V.oneOf(body,'role','El permiso',actor==='master'?[...roles,'owner']:roles);if(!allowed(actor,role))throw new HttpError(403,'No puedes conceder este permiso');return role;};
  const write=async(co,uid,role)=>db.prepare('INSERT INTO company_members(company_id,user_id,member_role) VALUES (?,?,?) ON CONFLICT(company_id,user_id) DO UPDATE SET member_role=excluded.member_role').run(co,uid,role);
@@ -25,7 +25,7 @@ export function registerMembershipRoutes(router,{db}){
   if(!old)throw new HttpError(404,'Miembro no encontrado');if(uid===c.user.id||!allowed(actor,old.member_role))throw new HttpError(403,'No puedes quitar este miembro');
   await db.prepare('DELETE FROM company_members WHERE company_id=? AND user_id=?').run(co,uid);await db.prepare("UPDATE company_invitations SET status='cancelled' WHERE company_id=? AND recipient_id=? AND status='pending'").run(co,uid);await auditMember(c,co,uid,'Acceso a empresa retirado');c.status=204;
  }));
- router.add('GET','/api/users/:id/companies',{perm:'users:write'},async c=>await db.prepare('SELECT company_id,member_role FROM company_members WHERE user_id=?').all(idOf(c.params.id)));
+ router.add('GET','/api/users/:id/companies',{perm:'users:write'},async c=>await db.prepare('SELECT m.company_id,m.member_role FROM company_members m JOIN companies c ON c.id=m.company_id WHERE m.user_id=? AND c.deleted_at IS NULL').all(idOf(c.params.id)));
  router.add('GET','/api/companies/:id/invitations',{},async c=>{const co=idOf(c.params.id);await requireCompany(db,c.user,co,'members:write');return await db.prepare("SELECT i.id,i.member_role,i.status,u.email,u.full_name FROM company_invitations i JOIN users u ON u.id=i.recipient_id WHERE i.company_id=? AND i.status='pending' ORDER BY i.id DESC").all(co);});
  router.add('POST','/api/companies/:id/invitations',{},async c=>tx(db,async()=>{
   const co=idOf(c.params.id);const actor=await requireCompany(db,c.user,co,'members:write');const role=checkRole(c.body,actor);if(role==='owner')throw new HttpError(422,'No se invita como propietario');
@@ -36,9 +36,9 @@ export function registerMembershipRoutes(router,{db}){
   await auditMember(c,co,u.id,'Invitación a empresa enviada');c.status=201;return {id:Number(n)};
  }));
  router.add('DELETE','/api/companies/:id/invitations/:inv',{},async c=>tx(db,async()=>{const co=idOf(c.params.id);const actor=await requireCompany(db,c.user,co,'members:write');const inv=await db.prepare("SELECT * FROM company_invitations WHERE id=? AND company_id=? AND status='pending'").get(idOf(c.params.inv),co);if(!inv)throw new HttpError(404,'Invitación no encontrada');if(!allowed(actor,inv.member_role))throw new HttpError(403,'No puedes cancelar esta invitación');await db.prepare("UPDATE company_invitations SET status='cancelled' WHERE id=?").run(inv.id);c.status=204;}));
- router.add('GET','/api/requests',{},async c=>await db.prepare("SELECT i.id,i.company_id,i.member_role,i.created_at,c.name AS company_name,u.full_name AS sender_name FROM company_invitations i JOIN companies c ON c.id=i.company_id JOIN users u ON u.id=i.sender_id WHERE i.recipient_id=? AND i.status='pending' ORDER BY i.id DESC").all(c.user.id));
+ router.add('GET','/api/requests',{},async c=>await db.prepare("SELECT i.id,i.company_id,i.member_role,i.created_at,c.name AS company_name,u.full_name AS sender_name FROM company_invitations i JOIN companies c ON c.id=i.company_id JOIN users u ON u.id=i.sender_id WHERE i.recipient_id=? AND i.status='pending' AND c.deleted_at IS NULL ORDER BY i.id DESC").all(c.user.id));
  router.add('POST','/api/requests/:id/respond',{},async c=>tx(db,async()=>{
-  const decision=V.oneOf(c.body,'decision','La respuesta',['accepted','declined']);const i=await db.prepare("SELECT * FROM company_invitations WHERE id=? AND recipient_id=? AND status='pending'").get(idOf(c.params.id),c.user.id);if(!i)throw new HttpError(404,'Solicitud no encontrada');
+  const decision=V.oneOf(c.body,'decision','La respuesta',['accepted','declined']);const i=await db.prepare("SELECT * FROM company_invitations WHERE id=? AND recipient_id=? AND status='pending'").get(idOf(c.params.id),c.user.id);if(!i||!(await db.prepare('SELECT id FROM companies WHERE id=? AND deleted_at IS NULL').get(i.company_id)))throw new HttpError(404,'Solicitud no encontrada');
   if(decision==='accepted'){
    const sender=await db.prepare('SELECT * FROM users WHERE id=?').get(i.sender_id);const actor=sender&&sender.active&&sender.approval_status==='approved'?await companyRole(db,sender,i.company_id):null;
    if(!allowed(actor,i.member_role))throw new HttpError(409,'La invitación ya no tiene autorización');
