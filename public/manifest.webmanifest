@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "name": "StageHub · Inventario técnico",
+  "short_name": "StageHub",
+  "description": "Inventario y producción técnica de eventos",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b0d10",
+  "theme_color": "#0b0d10",
+  "icons": [
+    {
+      "src": "/assets/stagehub-icon-192.png?v=0.4.7",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/stagehub-icon-512.png?v=0.4.7",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/stagehub-maskable-512.png?v=0.4.7",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

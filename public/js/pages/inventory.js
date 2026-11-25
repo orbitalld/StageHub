@@ -1,9 +1,9 @@
-import { get, del } from '../api.js?v=0.4.6';
-import { can, state, companyName } from '../state.js?v=0.4.6';
-import { h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js?v=0.4.6';
-import { openItemForm } from './item-form.js?v=0.4.6';
+import { get, del } from '../api.js?v=0.4.7';
+import { can, state, companyName } from '../state.js?v=0.4.7';
+import { h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js?v=0.4.7';
+import { openItemForm } from './item-form.js?v=0.4.7';
 
-import { copyItemInformation } from '../item-summary.js?v=0.4.6';
+import { copyItemInformation } from '../item-summary.js?v=0.4.7';
 
 const SORTABLE = { name: 'Equipo', code: 'Código', category: 'Categoría', total: 'Total', available: 'Disp.' };
 

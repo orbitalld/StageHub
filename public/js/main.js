@@ -1,15 +1,21 @@
-import { get, post } from './api.js?v=0.4.6';
-import { state, selectCompany, can } from './state.js?v=0.4.6';
-import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.6';
-import dashboardPage from './pages/dashboard.js?v=0.4.6';
-import inventoryPage from './pages/inventory.js?v=0.4.6';
-import itemPage from './pages/item.js?v=0.4.6';
-import categoriesPage from './pages/categories.js?v=0.4.6';
-import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.4.6';
-import usersPage from './pages/users.js?v=0.4.6';
-import { membersPage, requestsPage } from './pages/members.js?v=0.4.6';
+import { get, post } from './api.js?v=0.4.7';
+import { state, selectCompany, can } from './state.js?v=0.4.7';
+import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.7';
+import dashboardPage from './pages/dashboard.js?v=0.4.7';
+import inventoryPage from './pages/inventory.js?v=0.4.7';
+import itemPage from './pages/item.js?v=0.4.7';
+import categoriesPage from './pages/categories.js?v=0.4.7';
+import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.4.7';
+import usersPage from './pages/users.js?v=0.4.7';
+import { membersPage, requestsPage } from './pages/members.js?v=0.4.7';
 
 const root = document.getElementById('app');
+
+function brand(compact = false) {
+  return h('div', { class: 'brand' + (compact ? ' brand-compact' : '') },
+    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.4.7', alt: '', width: 44, height: 44 }),
+    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.4.7', alt: 'StageHub' }));
+}
 
 const ROUTES = [
   [/^#\/companies\/trash$/, trashPage, 'companies'],
@@ -69,7 +75,7 @@ function renderAuth(mode, notice='', initialEmail='') {
     verifying?field('Código recibido por correo',code):field('Contraseña',pass,setup||registering?'Mínimo 8 caracteres.':null),setup||registering?field('Repetir contraseña',pass2):null,btn);
   const resend=h('button',{class:'btn',type:'button',onclick:()=>guarded(resend,err,async()=>{const r=await post('/api/auth/resend-email',{email:user.value});renderAuth('verify',r.message,user.value);})},'Reenviar código');
   clear(root).append(h('div',{class:'login-wrap'},h('div',{class:'card login-card stack'},
-    h('div',{class:'brand',style:{padding:0}},h('i',{},'S'),'StageHub'),
+    brand(true),
     h('div',{},h('h1',{},setup?'Configuración inicial':registering?'Crear cuenta':verifying?'Verificar correo':'Iniciar sesión'),h('p',{class:'muted',style:{margin:'4px 0 0'}},registering?'Las cuentas nuevas necesitan aprobación del Master.':'Inventario y producción técnica de eventos.')),form,
     verifying?resend:null,
     !setup?h('div',{class:'row wrap'},mode!=='login'?h('button',{class:'btn ghost',onclick:()=>renderAuth('login')},'Volver al inicio de sesión'):null,mode!=='register'?h('button',{class:'btn ghost',onclick:()=>renderAuth('register')},'Crear cuenta'):null,mode!=='verify'?h('button',{class:'btn ghost',onclick:()=>renderAuth('verify')},'Verificar correo'):null):null)));
@@ -93,7 +99,7 @@ async function renderShell() {
   content = h('main', { class: 'content', id: 'content' });
   shell = h('div', { class: 'shell' },
     h('aside', { class: 'sidebar' },
-      h('div', { class: 'brand' }, h('i', {}, 'S'), 'StageHub'), nav,
+      brand(), nav,
       h('div', { class: 'side-foot stack', style: { gap: '8px' } },
         h('div', { style: { padding: '0 10px' } }, h('div', { style: { fontWeight: 550 } }, state.user.full_name), h('div', { class: 'muted small' }, state.user.role_label)),
         h('button', { class: 'btn ghost', onclick: changePasswordDialog }, icon('lock'), 'Cambiar contraseña'),
@@ -101,7 +107,7 @@ async function renderShell() {
     h('div', { class: 'main' },
       h('div', { class: 'topbar' },
         h('button', { class: 'icon-btn', 'aria-label': 'Menú', onclick: () => shell.classList.toggle('drawer') }, icon('menu')),
-        h('div', { class: 'brand', style: { padding: 0 } }, h('i', {}, 'S'), 'StageHub')),
+        brand(true)),
       state.companies.length?h('div', {class:'company-bar'}, h('label',{for:'company-select'},'Empresa activa'),
         h('select',{id:'company-select',value:String(state.companyId),onchange:e=>selectCompany(Number(e.target.value),location.hash==='#/dashboard/company'?'#/dashboard/company':'#/inventory')},state.companies.map(c=>h('option',{value:String(c.id)},c.name))),
         h('a',{class:'btn ghost',href:'#/companies'},icon('building'),'Empresas')):null,

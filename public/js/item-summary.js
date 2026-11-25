@@ -1,6 +1,6 @@
 // Ficha de inventario en texto plano. No contiene enlaces privados, credenciales ni tokens QR.
-import { get } from './api.js?v=0.4.6';
-import { h, modal, toast } from './ui.js?v=0.4.6';
+import { get } from './api.js?v=0.4.7';
+import { h, modal, toast } from './ui.js?v=0.4.7';
 
 const clean = value => value == null ? '' : String(value).trim().replace(/\s+/g, ' ');
 const unitLabel = u => clean(u.unit_number) ? `N.º ${clean(u.unit_number)}` : clean(u.unit_code) || 'Unidad sin numerar';

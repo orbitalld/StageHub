@@ -1,6 +1,6 @@
-import { get,post,put,del } from '../api.js?v=0.4.6';
-import { state,can } from '../state.js?v=0.4.6';
-import { h,field,guarded,toast,confirmDialog,clear } from '../ui.js?v=0.4.6';
+import { get,post,put,del } from '../api.js?v=0.4.7';
+import { state,can } from '../state.js?v=0.4.7';
+import { h,field,guarded,toast,confirmDialog,clear } from '../ui.js?v=0.4.7';
 export const roles={reader:'Solo lectura',inventory:'Gestión de inventario',members:'Gestión de usuarios (inventario solo lectura)',manager:'Inventario y usuarios',owner:'Propietario',master:'Master global'};
 export const roleSelect=(value,options=['reader','inventory','members','manager'])=>h('select',{value},options.map(r=>h('option',{value:r},roles[r])));
 export async function requestsPage(el){
