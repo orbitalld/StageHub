@@ -1,20 +1,23 @@
 import { get, post } from './api.js';
-import { state } from './state.js';
+import { state, selectCompany } from './state.js';
 import { h, icon, clear, toast, modal, field, guarded } from './ui.js';
 import dashboardPage from './pages/dashboard.js';
 import inventoryPage from './pages/inventory.js';
 import itemPage from './pages/item.js';
 import categoriesPage from './pages/categories.js';
+import companiesPage from './pages/companies.js';
 
 const root = document.getElementById('app');
 
 const ROUTES = [
+  [/^#\/companies$/, companiesPage, 'companies'],
   [/^#\/dashboard$/, dashboardPage, 'dashboard'],
   [/^#\/inventory$/, inventoryPage, 'inventory'],
   [/^#\/inventory\/(\d+)$/, itemPage, 'inventory'],
   [/^#\/categories$/, categoriesPage, 'categories'],
 ];
 const NAV = [
+  ['companies', 'Empresas', 'building', '#/companies'],
   ['dashboard', 'Panel de control', 'dashboard', '#/dashboard'],
   ['inventory', 'Inventario', 'package', '#/inventory'],
   ['categories', 'Categorías', 'tag', '#/categories'],
@@ -37,6 +40,7 @@ function renderFatal(msg) {
 }
 
 function renderAuth(mode) {
+  content=null; navLinks=null;
   const setup = mode === 'setup';
   const err = h('div', { class: 'error-box', hidden: true });
   const user = h('input', { type: 'text', autocomplete: 'username', required: true, autocapitalize: 'none' });
@@ -68,7 +72,10 @@ function renderAuth(mode) {
 let renderToken = 0;
 let shell, content, navLinks;
 
-function renderShell() {
+async function renderShell() {
+  try { state.companies = await get('/api/companies'); } catch(e){return renderFatal(e.message);}
+  const stored=Number(sessionStorage.getItem('stagehub-company') || 1);
+  state.companyId=state.companies.some(c=>c.id===stored)?stored:state.companies[0]?.id || 1;
   navLinks = {};
   const nav = h('nav', { class: 'nav' }, NAV.map(([key, label, ic, href]) => {
     const a = h('a', { href, onclick: () => shell.classList.remove('drawer') }, icon(ic), label);
@@ -87,6 +94,9 @@ function renderShell() {
       h('div', { class: 'topbar' },
         h('button', { class: 'icon-btn', 'aria-label': 'Menú', onclick: () => shell.classList.toggle('drawer') }, icon('menu')),
         h('div', { class: 'brand', style: { padding: 0 } }, h('i', {}, 'S'), 'StageHub')),
+      h('div', {class:'company-bar'}, h('label',{for:'company-select'},'Empresa activa'),
+        h('select',{id:'company-select',value:String(state.companyId),onchange:e=>selectCompany(Number(e.target.value),location.hash==='#/dashboard'?'#/dashboard':'#/inventory')},state.companies.map(c=>h('option',{value:String(c.id)},c.name))),
+        h('a',{class:'btn ghost',href:'#/companies'},icon('building'),'Empresas')),
       content),
     h('div', { class: 'scrim', onclick: () => shell.classList.remove('drawer') }));
   clear(root).append(shell);
@@ -94,7 +104,7 @@ function renderShell() {
 }
 
 async function route() {
-  if (!state.user) return;
+  if (!state.user || !content || !navLinks) return;
   const hash = location.hash || '#/dashboard';
   const match = ROUTES.map(([re, page, nav]) => [re.exec(hash), page, nav]).find(([m]) => m);
   if (!match) { location.hash = '#/dashboard'; return; }
@@ -118,6 +128,7 @@ async function route() {
 async function logout() {
   try { await post('/api/auth/logout'); } catch { /* sesión ya caducada */ }
   state.user = null;
+  sessionStorage.removeItem('stagehub-company');
   renderAuth('login');
 }
 

@@ -6,13 +6,13 @@ import { audit } from '../audit.js';
 
 const MODES = ['individual', 'cantidad'];
 
-export async function listCatalog(db) {
+export async function listCatalog(db,companyId=1) {
   const cats = (await db.prepare(`
-    SELECT c.*, (SELECT COUNT(*) FROM items i WHERE i.category_id = c.id) AS item_count
-    FROM categories c ORDER BY c.sort_order, c.name`).all());
+    SELECT c.*, (SELECT COUNT(*) FROM items i WHERE i.category_id = c.id AND i.company_id=?) AS item_count
+    FROM categories c ORDER BY c.sort_order, c.name`).all(companyId));
   const subs = (await db.prepare(`
-    SELECT s.*, (SELECT COUNT(*) FROM items i WHERE i.subcategory_id = s.id) AS item_count
-    FROM subcategories s ORDER BY s.sort_order, s.name`).all());
+    SELECT s.*, (SELECT COUNT(*) FROM items i WHERE i.subcategory_id = s.id AND i.company_id=?) AS item_count
+    FROM subcategories s ORDER BY s.sort_order, s.name`).all(companyId));
   return cats.map((c) => ({
     ...c,
     subcategories: subs.filter((s) => s.category_id === c.id)

@@ -1,3 +1,7 @@
+# Actualización v0.3.0 — Empresas
+
+Para actualizar un despliegue existente, sigue [la guía de empresas](docs/ACTUALIZACION_EMPRESAS.md). Conserva las variables de entorno. La migración de datos se aplica al iniciar el servidor.
+
 # StageHub 0.2 — Supabase + Render
 
 Migración de toda la aplicación **Fase 1** a PostgreSQL y Supabase Storage, con modo SQLite local conservado para desarrollo. La interfaz y los endpoints existentes se mantienen. Incluye autenticación propia (no Supabase Auth), sesiones persistentes, roles, categorías, inventario, numeración individual, stock por cantidad, fotos, historial y panel de control. La gestión de eventos/reservas de Fase 2 aún no existía en el código original; esta migración no la implementa.

@@ -1,10 +1,11 @@
+import { state } from './state.js';
 // Cliente HTTP: toda comunicación pasa por el backend, que valida y aplica las reglas.
 export class ApiError extends Error {
   constructor(status, message, details) { super(message); this.status = status; this.details = details; }
 }
 
 export async function api(method, url, body, { raw } = {}) {
-  const opts = { method, headers: { 'X-Requested-With': 'stagehub' }, credentials: 'same-origin' };
+  const opts = { method, headers: { 'X-Requested-With': 'stagehub', 'X-StageHub-Company': String(state.companyId) }, credentials: 'same-origin' };
   if (raw) { opts.body = raw; opts.headers['Content-Type'] = raw.type; }
   else if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
   let res;

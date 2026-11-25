@@ -215,3 +215,11 @@ input[type=file] { display: block; width: 100%; max-width: 100%; }
   .toasts { bottom: calc(72px + env(safe-area-inset-bottom)); pointer-events: none; }
 }
 @media (max-width: 350px) { .toolbar { grid-template-columns: 1fr; } }
+
+/* v0.3: contexto de empresa visible también en pantallas táctiles. */
+.company-bar {display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--border,#30343c);}
+.company-bar label {font-size:13px;font-weight:600;}
+.company-bar select {flex:1;min-width:0;max-width:420px;}
+.company-card {min-width:0;overflow-wrap:anywhere;}
+.company-card .btn {min-height:44px;white-space:normal;}
+@media(max-width:860px){.company-bar{padding:10px 12px;gap:8px;}.company-bar label{width:100%;}.company-bar select{max-width:none;min-height:44px;}.company-bar .btn{min-height:44px;}.company-card .row{flex-wrap:wrap;}}

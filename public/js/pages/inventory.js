@@ -1,5 +1,5 @@
 import { get, post, del } from '../api.js';
-import { can } from '../state.js';
+import { can, state, companyName } from '../state.js';
 import { h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js';
 import { openItemForm } from './item-form.js';
 
@@ -8,7 +8,7 @@ const SORTABLE = { name: 'Equipo', code: 'Código', category: 'Categoría', tota
 export default async function inventoryPage(el) {
   const catalog = await get('/api/categories');
   const q = { search: '', category_id: '', subcategory_id: '', status: '', mode: '', sort: 'name', dir: 'asc', page: 1, limit: 25 };
-  try { Object.assign(q, JSON.parse(sessionStorage.getItem('inv-filters') || '{}')); } catch { /* sin filtros guardados */ }
+  try { Object.assign(q, JSON.parse(sessionStorage.getItem(`inv-filters-${state.companyId}`) || '{}')); } catch { /* sin filtros guardados */ }
   const canWrite = can('inventory:write');
 
   const results = h('div', {});
@@ -30,13 +30,13 @@ export default async function inventoryPage(el) {
   const modeSel = sel('mode', [['', 'Ambas modalidades'], ['individual', 'Individual'], ['cantidad', 'Por cantidad']]);
 
   el.append(
-    h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Inventario'), h('div', { class: 'sub' }, 'Equipos y materiales de la empresa')), h('div', { class: 'spacer' }),
+    h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Inventario'), h('div', { class: 'sub' }, `Equipos y materiales · ${companyName()}`)), h('div', { class: 'spacer' }),
       canWrite ? h('button', { class: 'btn primary', onclick: () => openItemForm({ onSaved: (it) => { location.hash = `#/inventory/${it.id}`; } }) }, icon('plus'), 'Nuevo equipo') : null),
     h('div', { class: 'toolbar' }, h('div', { class: 'search' }, icon('search'), search), catSel, subSel, statusSel, modeSel),
     results);
 
   async function load() {
-    sessionStorage.setItem('inv-filters', JSON.stringify(q));
+    sessionStorage.setItem(`inv-filters-${state.companyId}`, JSON.stringify(q));
     const params = new URLSearchParams(Object.entries(q).filter(([, v]) => v !== '' && v != null));
     let data;
     try { data = await get(`/api/items?${params}`); } catch (e) { clear(results).append(h('div', { class: 'error-box' }, e.message)); return; }

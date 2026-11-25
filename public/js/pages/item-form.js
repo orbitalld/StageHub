@@ -1,3 +1,4 @@
+import { companyName } from '../state.js';
 // Formulario de alta/edición de equipos (modal). Toda validación definitiva ocurre en el backend.
 import { get, post, put, api } from '../api.js';
 import { h, icon, modal, field, guarded, toast, resizeImage, MODE_LABEL } from '../ui.js';
@@ -144,6 +145,6 @@ export async function openItemForm({ item = null, onSaved }) {
     e.target.scrollIntoView({ block: 'center', inline: 'nearest' });
   }, true);
   fillSubs(); renderMode(); renderPhoto(); renderSpecs(); renderAcc();
-  const m = modal({ title: editing ? `Editar: ${item.name}` : 'Nuevo equipo', wide: true, body: form,
+  const m = modal({ title: editing ? `Editar: ${item.name}` : `Nuevo equipo · ${companyName()}`, wide: true, body: form,
     footer: [h('button', { class: 'btn', type: 'button', onclick: () => m.close() }, 'Cancelar'), save] });
 }

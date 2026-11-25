@@ -1,5 +1,5 @@
 import { get, post, put, del } from '../api.js';
-import { can } from '../state.js';
+import { can, state, companyName, selectCompany } from '../state.js';
 import { h, icon, badge, field, modal, guarded, toast, confirmDialog, fmtNum, fmtMoney, fmtDate, fmtDateTime, MODE_LABEL, STOCK_STATUS, UNIT_STATUS, clear } from '../ui.js';
 import { openItemForm } from './item-form.js';
 
@@ -25,13 +25,14 @@ export default async function itemPage(el, [idStr]) {
       h('div', { class: 'card' }, h('div', { class: 'detail-head' },
         item.photo ? h('img', { class: 'detail-photo', src: `/uploads/${item.photo}`, alt: item.name }) : h('div', { class: 'detail-photo' }, icon('image', 28)),
         h('div', { style: { flex: 1, minWidth: '220px' } },
-          h('h1', {}, item.name),
+          h('h1', {}, item.name), h('div',{class:'muted small'},`Empresa: ${companyName()}`),
           h('div', { class: 'row wrap', style: { marginTop: '8px' } }, h('span', { class: 'mono muted' }, item.internal_code),
             h('span', { class: 'row', style: { gap: '6px' } }, h('span', { class: 'dot', style: { background: item.category.color } }), item.subcategory ? `${item.category.name} › ${item.subcategory.name}` : item.category.name),
             badge(MODE_LABEL[item.tracking_mode], 'info'), badge(stLabel, stKind), item.low_stock ? badge(`Bajo el mínimo (${item.min_stock})`, 'warn') : null)),
         canWrite ? h('div', { class: 'row' },
           h('button', { class: 'btn', onclick: () => openItemForm({ item, onSaved: (it) => refresh(it) }) }, icon('edit'), 'Editar'),
           h('button', { class: 'btn', onclick: async () => { try { const c = await post(`/api/items/${id}/duplicate`); toast('Equipo duplicado'); location.hash = `#/inventory/${c.id}`; } catch (e) { toast(e.message, 'error'); } } }, icon('copy'), 'Duplicar'),
+          can('companies:write') && state.companies.length>1 ? h('button',{class:'btn',onclick:()=>transferDialog(item)},'Trasladar') : null,
           h('button', { class: 'btn danger', onclick: async () => {
             if (!(await confirmDialog({ title: 'Eliminar equipo', message: `¿Eliminar "${item.name}" y todas sus existencias? No se puede deshacer.`, confirmText: 'Eliminar', danger: true }))) return;
             try { await del(`/api/items/${id}`); toast('Equipo eliminado'); location.hash = '#/inventory'; } catch (e) { toast(e.message, 'error'); }
@@ -57,6 +58,16 @@ export default async function itemPage(el, [idStr]) {
       h('div', { style: { height: '14px' } }),
       h('div', { class: 'card' }, h('h2', {}, 'Historial de cambios'),
         history.length ? h('ul', { class: 'list' }, history.map((r) => h('li', {}, h('span', { style: { flex: 1 } }, r.summary), h('span', { class: 'muted small' }, `${r.username ?? '—'} · ${fmtDateTime(r.ts)}`)))) : h('p', { class: 'muted', style: { margin: 0 } }, 'Sin movimientos.'))));
+  }
+
+  function transferDialog(item) {
+    const choices=state.companies.filter(c=>c.id!==state.companyId);
+    const target=h('select',{required:true},choices.map(c=>h('option',{value:c.id},c.name)));
+    const err=h('div',{class:'error-box',hidden:true});
+    const save=h('button',{class:'btn primary',type:'submit',form:'transfer-form'},'Trasladar equipo');
+    const m=modal({title:'Trasladar equipo a otra empresa',body:h('form',{id:'transfer-form',class:'stack',onsubmit:e=>{
+      e.preventDefault(); guarded(save,err,async()=>{await post(`/api/items/${id}/transfer`,{company_id:Number(target.value)});m.close();selectCompany(Number(target.value),`#/inventory/${id}`);});
+    }},err,h('p',{},`Se trasladará ${item.name} completo, incluidas sus unidades, existencias, fotografía e historial.`),field('Empresa de destino',target)),footer:[h('button',{class:'btn',onclick:()=>m.close()},'Cancelar'),save]});
   }
 
   function unitsCard(item) {

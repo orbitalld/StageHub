@@ -1,3 +1,4 @@
+import { companyName } from '../state.js';
 import { get } from '../api.js';
 import { h, icon, badge, fmtNum, fmtDateTime } from '../ui.js';
 import { donut, hbars, line } from '../charts.js';
@@ -11,7 +12,7 @@ export default async function dashboardPage(el) {
   const empty = t.total === 0;
 
   el.append(
-    h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Panel de control'), h('div', { class: 'sub' }, 'Estado actual del inventario')), h('div', { class: 'spacer' }),
+    h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Panel de control'), h('div', { class: 'sub' }, `Estado actual del inventario · ${companyName()}`)), h('div', { class: 'spacer' }),
       h('a', { class: 'btn', href: '#/inventory' }, icon('package'), 'Ver inventario')),
     h('div', { class: 'grid kpis' },
       kpi('Equipos registrados', t.total), kpi('Disponibles', t.available, 'ok'),

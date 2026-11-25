@@ -6,7 +6,7 @@ export default async function categoriesPage(el) {
   const canWrite = can('categories:write');
   const host = h('div', { class: 'stack' });
   el.append(
-    h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Categorías'), h('div', { class: 'sub' }, 'Crea y organiza categorías y subcategorías sin tocar el código')), h('div', { class: 'spacer' }),
+    h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Categorías'), h('div', { class: 'sub' }, 'Catálogo compartido por todas las empresas · cantidades de referencias de la empresa activa')), h('div', { class: 'spacer' }),
       canWrite ? h('button', { class: 'btn primary', onclick: () => categoryDialog() }, icon('plus'), 'Nueva categoría') : null), host);
   await refresh();
 

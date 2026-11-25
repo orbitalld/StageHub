@@ -21,7 +21,7 @@ const SELECT_ITEM = `
 function mapItem(r) {
   const status = r.total === 0 ? 'sin_stock' : r.available === r.total ? 'disponible' : r.available === 0 ? 'no_disponible' : 'parcial';
   return {
-    id: r.id, internal_code: r.internal_code, name: r.name,
+    id: r.id, company_id:r.company_id, internal_code: r.internal_code, name: r.name,
     category: { id: r.category_id, name: r.category_name, color: r.category_color },
     subcategory: r.subcategory_id ? { id: r.subcategory_id, name: r.subcategory_name } : null,
     brand: r.brand, model: r.model, tracking_mode: r.tracking_mode,
@@ -39,7 +39,7 @@ function mapItem(r) {
 const escLike = (s) => `%${s.replace(/[\\%_]/g, '\\$&')}%`;
 
 export async function listItems(db, q = {}) {
-  const where = []; const args = [];
+  const where = ['i.company_id = ?']; const args = [q.company_id ?? 1];
   if (q.search?.trim()) {
     const like = escLike(q.search.trim());
     where.push(`(i.name LIKE ? ESCAPE '\\' OR i.brand LIKE ? ESCAPE '\\' OR i.model LIKE ? ESCAPE '\\' OR i.internal_code LIKE ? ESCAPE '\\'
@@ -97,14 +97,14 @@ async function nextCode(db, prefix) {
 }
 
 // ---------- snapshot diario para el gráfico de evolución ----------
-export async function snapshotStock(db) {
+export async function snapshotStock(db, companyId=1) {
   const t = (await db.prepare(`SELECT COALESCE(SUM(total),0) AS total, COALESCE(SUM(available),0) AS available,
-      COALESCE(SUM(maintenance),0) AS maintenance, COALESCE(SUM(out_of_service),0) AS out_of_service FROM v_item_stock`).get());
-  (await db.prepare(`INSERT INTO stock_snapshots(day, total, available, maintenance, out_of_service)
-              VALUES (date('now','localtime'), ?,?,?,?)
-              ON CONFLICT(day) DO UPDATE SET total=excluded.total, available=excluded.available,
+      COALESCE(SUM(maintenance),0) AS maintenance, COALESCE(SUM(out_of_service),0) AS out_of_service FROM v_item_stock v JOIN items i ON i.id=v.item_id WHERE i.company_id=?`).get(companyId));
+  (await db.prepare(`INSERT INTO company_stock_snapshots(company_id,day, total, available, maintenance, out_of_service)
+              VALUES (?,date('now','localtime'), ?,?,?,?)
+              ON CONFLICT(company_id,day) DO UPDATE SET total=excluded.total, available=excluded.available,
                 maintenance=excluded.maintenance, out_of_service=excluded.out_of_service`)
-    .run(t.total, t.available, t.maintenance, t.out_of_service));
+    .run(companyId,t.total, t.available, t.maintenance, t.out_of_service));
 }
 
 // ---------- validación de equipos ----------
@@ -199,15 +199,15 @@ export async function createItem(ctx, user, body) {
   return (await tx(db, async () => {
     const internal_code = code || (await nextCode(db, prefixOf(cat.name)));
     const vals = { ...fields, internal_code };
-    const cols = [...ITEM_COLS, 'created_by', 'updated_by'];
+    const cols = [...ITEM_COLS, 'company_id','created_by', 'updated_by'];
     const r = (await db.prepare(`INSERT INTO items(${cols.join(',')}) VALUES (${cols.map((c) => ':' + c).join(',')})`)
-      .run({ ...Object.fromEntries(ITEM_COLS.map((c) => [c, vals[c] ?? null])), created_by: user.id, updated_by: user.id }));
+      .run({ ...Object.fromEntries(ITEM_COLS.map((c) => [c, vals[c] ?? null])), company_id: user.company_id ?? 1, created_by: user.id, updated_by: user.id }));
     const id = Number(r.lastInsertRowid);
     if (fields.tracking_mode === 'individual' && initial > 0) {
       (await insertUnits(db, { id, internal_code, location: fields.location }, Array.from({ length: initial }, () => null)));
     }
     (await audit(db, user, 'crear', 'item', id, `Equipo creado: ${fields.name} (${internal_code})`, { item_id: id }));
-    (await snapshotStock(db));
+    (await snapshotStock(db,user.company_id ?? 1));
     return (await getItem(db, id));
   }));
 }
@@ -241,7 +241,7 @@ export async function updateItem(ctx, user, id, body) {
       if ((existing[c] ?? null) !== (vals[c] ?? null)) changes.push({ campo: c, antes: existing[c] ?? null, despues: vals[c] ?? null });
     }
     (await audit(db, user, 'editar', 'item', id, `Equipo editado: ${fields.name}`, { item_id: id, cambios: changes }));
-    (await snapshotStock(db));
+    (await snapshotStock(db,user.company_id ?? 1));
     
     return (await getItem(db, id));
   }));
@@ -258,7 +258,7 @@ export async function deleteItem(ctx, user, id) {
     (await db.prepare('DELETE FROM items WHERE id = ?').run(id));
     (await audit(db, user, 'eliminar', 'item', id, `Equipo eliminado: ${existing.name} (${existing.internal_code})`,
       { item_id: id, tracking_mode: existing.tracking_mode }));
-    (await snapshotStock(db));
+    (await snapshotStock(db,user.company_id ?? 1));
   }));
   (await releasePhoto(ctx, existing.photo));
 }
@@ -271,20 +271,20 @@ export async function duplicateItem(ctx, user, id) {
   return (await tx(db, async () => {
     const vals = { ...src, internal_code: (await nextCode(db, prefixOf(cat.name))), name: `${src.name} (copia)`.slice(0, 150),
       qty_total: 0, qty_maintenance: 0, qty_out_of_service: 0, photo: (await copyPhoto(cfg, src.photo)) };
-    const cols = [...ITEM_COLS, 'created_by', 'updated_by'];
+    const cols = [...ITEM_COLS, 'company_id','created_by', 'updated_by'];
     const r = (await db.prepare(`INSERT INTO items(${cols.join(',')}) VALUES (${cols.map((c) => ':' + c).join(',')})`)
-      .run({ ...Object.fromEntries(ITEM_COLS.map((c) => [c, vals[c] ?? null])), created_by: user.id, updated_by: user.id }));
+      .run({ ...Object.fromEntries(ITEM_COLS.map((c) => [c, vals[c] ?? null])), company_id: user.company_id ?? 1, created_by: user.id, updated_by: user.id }));
     const newId = Number(r.lastInsertRowid);
     (await audit(db, user, 'duplicar', 'item', newId, `Equipo duplicado desde ${src.internal_code}: ${vals.name}`, { item_id: newId, origen: id }));
     return (await getItem(db, newId));
   }));
 }
 
-export async function itemHistory(db, id, limit = 50) {
+export async function itemHistory(db, id, limit = 50, companyId = null) {
   // El historial sigue siendo consultable aunque el equipo ya no exista.
   return (await db.prepare(`SELECT id, ts, username, action, entity, summary FROM audit_log
-    WHERE (entity = 'item' AND entity_id = ?) OR (entity = 'unit' AND json_extract(details, '$.item_id') = ?)
-    ORDER BY id DESC LIMIT ?`).all(id, id, Math.min(limit, 200))).map((r) => ({ ...r }));
+    WHERE ((entity = 'item' AND entity_id = ?) OR (entity = 'unit' AND json_extract(details, '$.item_id') = ?))
+    ${companyId===null?'':'AND company_id=?'} ORDER BY id DESC LIMIT ?`).all(id, id, ...(companyId===null?[]:[companyId]), Math.min(limit, 200))).map((r) => ({ ...r }));
 }
 
 // ---------- unidades individuales ----------
@@ -313,7 +313,7 @@ export async function addUnits(ctx, user, itemId, body) {
     (await insertUnits(db, item, serials, start));
     (await db.prepare(`UPDATE items SET updated_by = ?, updated_at = datetime('now') WHERE id = ?`).run(user.id, itemId));
     (await audit(db, user, 'crear', 'unit', null, `${serials.length} unidad(es) agregada(s) a ${item.name}`, { item_id: itemId, cantidad: serials.length }));
-    (await snapshotStock(db));
+    (await snapshotStock(db,user.company_id ?? 1));
     return (await getItem(db, itemId));
   }));
 }
@@ -351,7 +351,7 @@ export async function updateUnit(ctx, user, unitId, body) {
     if (statusNote && (statusChanged || statusNote !== unit.status_note)) summary += ` — Nota: ${statusNote}`;
     (await audit(db, user, 'editar', 'unit', unitId, summary,
       { item_id: unit.item_id, estado_anterior: unit.status, estado_nuevo: status, nota: statusNote }));
-    (await snapshotStock(db));
+    (await snapshotStock(db,user.company_id ?? 1));
     return (await getItem(db, unit.item_id));
   }));
 }
@@ -363,27 +363,27 @@ export async function deleteUnit(ctx, user, unitId) {
   return (await tx(db, async () => {
     (await db.prepare('DELETE FROM units WHERE id = ?').run(unitId));
     (await audit(db, user, 'eliminar', 'unit', unitId, `Unidad eliminada: N.º ${unit.unit_number ?? '—'} (${unit.unit_code})`, { item_id: unit.item_id }));
-    (await snapshotStock(db));
+    (await snapshotStock(db,user.company_id ?? 1));
     return (await getItem(db, unit.item_id));
   }));
 }
 
 // ---------- panel de control ----------
-export async function dashboard(db) {
+export async function dashboard(db, companyId=1) {
   const totals = (await db.prepare(`SELECT COUNT(*) AS references_count, COALESCE(SUM(total),0) AS total,
       COALESCE(SUM(available),0) AS available, COALESCE(SUM(maintenance),0) AS maintenance,
-      COALESCE(SUM(out_of_service),0) AS out_of_service FROM v_item_stock`).get());
+      COALESCE(SUM(out_of_service),0) AS out_of_service FROM v_item_stock v JOIN items i ON i.id=v.item_id WHERE i.company_id=?`).get(companyId));
   const by_category = (await db.prepare(`
     SELECT c.id, c.name, c.color, COALESCE(SUM(v.total),0) AS total, COALESCE(SUM(v.available),0) AS available
-    FROM categories c LEFT JOIN items i ON i.category_id = c.id LEFT JOIN v_item_stock v ON v.item_id = i.id
-    GROUP BY c.id ORDER BY c.sort_order, c.name`).all()).map((r) => ({ ...r }));
+    FROM categories c LEFT JOIN items i ON i.category_id = c.id AND i.company_id = ? LEFT JOIN v_item_stock v ON v.item_id = i.id
+    GROUP BY c.id ORDER BY c.sort_order, c.name`).all(companyId)).map((r) => ({ ...r }));
   const low_stock = (await db.prepare(`
     SELECT i.id, i.internal_code, i.name, i.min_stock, v.available, v.total
     FROM items i JOIN v_item_stock v ON v.item_id = i.id
-    WHERE i.min_stock > 0 AND v.available < i.min_stock
-    ORDER BY (i.min_stock - v.available) DESC, i.name LIMIT 15`).all()).map((r) => ({ ...r }));
-  const evolution = (await db.prepare(`SELECT * FROM (SELECT * FROM stock_snapshots ORDER BY day DESC LIMIT 90) ORDER BY day`).all()).map((r) => ({ ...r }));
+    WHERE i.company_id=? AND i.min_stock > 0 AND v.available < i.min_stock
+    ORDER BY (i.min_stock - v.available) DESC, i.name LIMIT 15`).all(companyId)).map((r) => ({ ...r }));
+  const evolution = (await db.prepare(`SELECT * FROM (SELECT * FROM company_stock_snapshots WHERE company_id=? ORDER BY day DESC LIMIT 90) AS recent_days ORDER BY day`).all(companyId)).map((r) => ({ ...r }));
   const recent = (await db.prepare(`SELECT id, ts, username, action, entity, entity_id, summary FROM audit_log
-                             WHERE entity IN ('item','unit') ORDER BY id DESC LIMIT 8`).all()).map((r) => ({ ...r }));
+                             WHERE company_id=? AND entity IN ('item','unit') ORDER BY id DESC LIMIT 8`).all(companyId)).map((r) => ({ ...r }));
   return { totals: { ...totals }, by_category, low_stock, evolution, recent };
 }

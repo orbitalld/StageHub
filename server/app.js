@@ -15,6 +15,7 @@ import { PHOTO_RE } from './services/photos.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
 import { registerItemRoutes } from './routes/items.js';
+import { registerCompanyRoutes } from './routes/companies.js';
 import { registerDashboardRoutes } from './routes/dashboard.js';
 
 const SECURITY_HEADERS = {
@@ -32,7 +33,7 @@ export async function createApp(cfg) {
   try {
     await withDb(db,async()=>{
       await seedCatalog(db);
-      await snapshotStock(db);
+      for (const co of await db.prepare('SELECT id FROM companies').all()) await snapshotStock(db,co.id);
       if(cfg.databaseUrl && await countUsers(db)===0){
         if(!cfg.adminPassword) throw new Error('Define ADMIN_PASSWORD para crear el primer administrador de forma segura.');
         await tx(db,async()=>{const u=await createUser(db,{username:cfg.adminUsername,full_name:cfg.adminName,role:'admin',password:cfg.adminPassword}); await audit(db,u,'crear','user',u.id,'Administrador inicial creado desde configuración del servidor');});
@@ -49,6 +50,7 @@ export async function createApp(cfg) {
   registerCatalogRoutes(router, ctx);
   registerItemRoutes(router, ctx);
   registerDashboardRoutes(router, ctx);
+  registerCompanyRoutes(router, ctx);
 
   const cookieBase = `Path=/; HttpOnly; SameSite=Lax${cfg.secureCookies ? '; Secure' : ''}`;
 
