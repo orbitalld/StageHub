@@ -1,18 +1,23 @@
-import { get, post, put, api, del } from '../api.js';
-import { can, state, selectCompany } from '../state.js';
-import { h, icon, badge, field, modal, guarded, fmtNum, toast, confirmDialog } from '../ui.js';
+import { get, post, put, api, del } from '../api.js?v=0.4.3';
+import { roles } from './members.js?v=0.4.3';
+import { can, state, selectCompany } from '../state.js?v=0.4.3';
+import { h, icon, badge, field, modal, guarded, fmtNum, toast, confirmDialog } from '../ui.js?v=0.4.3';
 
 export default async function companiesPage(el, _params, overview=false) {
   const companies=await get('/api/companies');
+  state.companies=companies;
   const write=can('companies:write');
-  el.append(h('div',{class:'page-head'},h('div',{},h('h1',{},overview?'Panel principal':'Empresas'),h('div',{class:'sub'},overview?'Selecciona una empresa para acceder a su inventario.':'Gestiona un inventario independiente para cada empresa.')),h('div',{class:'spacer'}),write?h('button',{class:'btn primary',onclick:()=>edit()},icon('plus'),'Nueva empresa'):null),
+  const requests=overview?await get('/api/requests'):[];
+  el.append(h('div',{class:'page-head'},h('div',{},h('h1',{},overview?'Panel principal':'Empresas'),h('div',{class:'sub'},overview?'Selecciona una empresa para acceder a su inventario.':'Gestiona un inventario independiente para cada empresa.')),h('div',{class:'spacer'}),h('button',{class:'btn primary',onclick:()=>edit()},icon('plus'),'Nueva empresa')),
+    overview?h('section',{class:'card row wrap',style:{marginBottom:'14px'}},h('div',{class:'stack',style:{flex:1}},h('strong',{},'Solicitudes de unión'),h('span',{class:'muted small'},`${requests.length} pendiente(s)`)),h('a',{class:'btn',href:'#/requests'},'Ver solicitudes')):null,
+    !companies.length?h('p',{class:'muted'},'Todavía no tienes empresas. Crea la tuya o revisa tus solicitudes.'):null,
     h('div',{class:'grid cols-2'},companies.map(c=>h('section',{class:'card stack company-card'},
-      h('div',{class:'row wrap'},companyLogo(c),h('h2',{style:{margin:0,overflowWrap:'anywhere'}},c.name),c.id===state.companyId?badge('Activa','ok'):null),
+      h('div',{class:'row wrap'},companyLogo(c),h('h2',{style:{margin:0,overflowWrap:'anywhere'}},c.name),badge(roles[c.member_role]||'Miembro','info'),c.id===state.companyId?badge('Activa','ok'):null),
       c.rut?h('div',{class:'muted small'},`RUT: ${c.rut}`):null,
       c.contact?h('div',{class:'muted small'},`Contacto: ${c.contact}`):null,
       c.notes?h('p',{class:'muted',style:{margin:0,overflowWrap:'anywhere',whiteSpace:'pre-wrap'}},c.notes):null,
       h('div',{class:'grid cols-2'},h('div',{class:'kpi'},h('div',{class:'label'},'Referencias'),h('div',{class:'value'},fmtNum(c.item_count))),h('div',{class:'kpi'},h('div',{class:'label'},'Unidades totales'),h('div',{class:'value'},fmtNum(c.total)))),
-      h('div',{class:'row wrap'},h('button',{class:'btn primary',onclick:()=>selectCompany(c.id)},icon('package'),can('inventory:write')?'Administrar inventario':'Ver inventario'),h('button',{class:'btn',onclick:()=>selectCompany(c.id,'#/dashboard/company')},icon('dashboard'),'Estadísticas'),write?h('button',{class:'btn',onclick:()=>edit(c)},icon('edit'),'Editar'):null,write?h('button',{class:'btn',onclick:()=>editLogo(c)},icon('image'),c.logo?'Cambiar logo':'Agregar logo'):null)))));
+      h('div',{class:'row wrap'},h('button',{class:'btn primary',onclick:()=>selectCompany(c.id)},icon('package'),can('inventory:write',c.id)?'Administrar inventario':'Ver inventario'),h('button',{class:'btn',onclick:()=>selectCompany(c.id,'#/dashboard/company')},icon('dashboard'),'Estadísticas'),can('company:edit',c.id)?h('button',{class:'btn',onclick:()=>edit(c)},icon('edit'),'Editar'):null,can('members:write',c.id)?h('a',{class:'btn',href:`#/companies/${c.id}/members`},'Gestionar miembros'):null,write?h('button',{class:'btn',onclick:()=>editLogo(c)},icon('image'),c.logo?'Cambiar logo':'Agregar logo'):null)))));
 
   function companyLogo(c) {
     const fallback=()=>icon('building',30);

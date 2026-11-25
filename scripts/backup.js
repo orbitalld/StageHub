@@ -17,7 +17,7 @@ try {
     await withDb(db,async()=>{
       const data=await tx(db,async()=>{
         await db.exec('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
-        const tables=['users','companies','categories','subcategories','items','units','audit_log','stock_snapshots','company_stock_snapshots','settings','counters'];
+        const tables=['users','companies','categories','subcategories','items','units','audit_log','stock_snapshots','company_stock_snapshots','settings','counters','company_members','company_invitations'];
         const result={}; for(const t of tables)result[t]=await db.prepare(`SELECT * FROM ${t}`).all();return result;
       });
       fs.writeFileSync(path.join(dir,'database.json'),JSON.stringify({format:'stagehub-postgres-v1',exportedAt:new Date().toISOString(),tables:data},null,2),{mode:0o600});

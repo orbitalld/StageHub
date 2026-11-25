@@ -1,16 +1,19 @@
-import { get, post } from './api.js';
-import { state, selectCompany, can } from './state.js';
-import { h, icon, clear, toast, modal, field, guarded } from './ui.js';
-import dashboardPage from './pages/dashboard.js';
-import inventoryPage from './pages/inventory.js';
-import itemPage from './pages/item.js';
-import categoriesPage from './pages/categories.js';
-import companiesPage, { overviewPage } from './pages/companies.js';
-import usersPage from './pages/users.js';
+import { get, post } from './api.js?v=0.4.3';
+import { state, selectCompany, can } from './state.js?v=0.4.3';
+import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.3';
+import dashboardPage from './pages/dashboard.js?v=0.4.3';
+import inventoryPage from './pages/inventory.js?v=0.4.3';
+import itemPage from './pages/item.js?v=0.4.3';
+import categoriesPage from './pages/categories.js?v=0.4.3';
+import companiesPage, { overviewPage } from './pages/companies.js?v=0.4.3';
+import usersPage from './pages/users.js?v=0.4.3';
+import { membersPage, requestsPage } from './pages/members.js?v=0.4.3';
 
 const root = document.getElementById('app');
 
 const ROUTES = [
+  [/^#\/requests$/, requestsPage, 'requests'],
+  [/^#\/companies\/(\d+)\/members$/, membersPage, 'companies'],
   [/^#\/companies$/, companiesPage, 'companies'],
   [/^#\/dashboard$/, overviewPage, 'dashboard'],
   [/^#\/dashboard\/company$/, dashboardPage, 'dashboard'],
@@ -22,6 +25,7 @@ const ROUTES = [
 const NAV = [
   ['dashboard', 'Panel principal', 'dashboard', '#/dashboard'],
   ['companies', 'Empresas', 'building', '#/companies'],
+  ['requests', 'Solicitudes', 'user', '#/requests'],
   ['users', 'Administración de usuarios', 'lock', '#/users'],
   ['inventory', 'Inventario', 'package', '#/inventory'],
   ['categories', 'Categorías', 'tag', '#/categories'],
@@ -76,10 +80,11 @@ let shell, content, navLinks;
 
 async function renderShell() {
   try { state.companies = await get('/api/companies'); } catch(e){return renderFatal(e.message);}
+  if(!state.companies.length&&!['#/dashboard','#/companies','#/requests','#/users'].includes(location.hash))location.hash='#/dashboard';
   const stored=Number(sessionStorage.getItem('stagehub-company') || 1);
-  state.companyId=state.companies.some(c=>c.id===stored)?stored:state.companies[0]?.id || 1;
+  state.companyId=state.companies.some(c=>c.id===stored)?stored:state.companies[0]?.id || 0;
   navLinks = {};
-  const nav = h('nav', { class: 'nav' }, NAV.filter(([key])=>key!=='users'||can('users:write')).map(([key, label, ic, href]) => {
+  const nav = h('nav', { class: 'nav' }, NAV.filter(([key])=>(key!=='users'||can('users:write'))&&(!['inventory','categories'].includes(key)||state.companies.length>0)).map(([key, label, ic, href]) => {
     const a = h('a', { href, onclick: () => shell.classList.remove('drawer') }, icon(ic), label);
     navLinks[key] = a;
     return a;
@@ -96,9 +101,9 @@ async function renderShell() {
       h('div', { class: 'topbar' },
         h('button', { class: 'icon-btn', 'aria-label': 'Menú', onclick: () => shell.classList.toggle('drawer') }, icon('menu')),
         h('div', { class: 'brand', style: { padding: 0 } }, h('i', {}, 'S'), 'StageHub')),
-      h('div', {class:'company-bar'}, h('label',{for:'company-select'},'Empresa activa'),
+      state.companies.length?h('div', {class:'company-bar'}, h('label',{for:'company-select'},'Empresa activa'),
         h('select',{id:'company-select',value:String(state.companyId),onchange:e=>selectCompany(Number(e.target.value),location.hash==='#/dashboard/company'?'#/dashboard/company':'#/inventory')},state.companies.map(c=>h('option',{value:String(c.id)},c.name))),
-        h('a',{class:'btn ghost',href:'#/companies'},icon('building'),'Empresas')),
+        h('a',{class:'btn ghost',href:'#/companies'},icon('building'),'Empresas')):null,
       content),
     h('div', { class: 'scrim', onclick: () => shell.classList.remove('drawer') }));
   clear(root).append(shell);

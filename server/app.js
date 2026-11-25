@@ -1,3 +1,5 @@
+import { companyRole, photoAllowed } from './company-access.js';
+import { registerMembershipRoutes } from './routes/memberships.js';
 // Construye la aplicación: base de datos, rutas, seguridad y archivos estáticos.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -54,6 +56,7 @@ export async function createApp(cfg) {
   registerItemRoutes(router, ctx);
   registerDashboardRoutes(router, ctx);
   registerCompanyRoutes(router, ctx);
+  registerMembershipRoutes(router,ctx);
 
   const cookieBase = `Path=/; HttpOnly; SameSite=Lax${cfg.secureCookies ? '; Secure' : ''}`;
 
@@ -104,16 +107,17 @@ export async function createApp(cfg) {
       const session = (await resolveSession(db, parseCookies(req.headers.cookie).sid, cfg.sessionDays));
       if (!session) throw new HttpError(401, 'Debes iniciar sesión');
       if (LOGO_RE.test(name)) {
-        if (!can(effectiveRole(session.user),'inventory:read') || !(await db.prepare('SELECT id FROM companies WHERE logo=?').get(name))) throw new HttpError(404,'Archivo no encontrado');
+        const co=await db.prepare('SELECT id FROM companies WHERE logo=?').get(name);
+        if (!co || !(await companyRole(db,session.user,co.id))) throw new HttpError(404,'Archivo no encontrado');
         let data;
         if (cfg.databaseUrl) data=await getPhoto(cfg,name);
         else {try {data=fs.readFileSync(path.join(cfg.uploadsDir,name));} catch {throw new HttpError(404,'Archivo no encontrado');}}
         res.writeHead(200,{'Content-Type':photoType(name),'Content-Length':data.length,'Cache-Control':'private, no-store'});
         res.end(req.method==='HEAD'?undefined:data);return;
       }
-      if (!PHOTO_RE.test(name)) throw new HttpError(404,'Archivo no encontrado');
-      if(cfg.databaseUrl){const data=await getPhoto(cfg,name); res.writeHead(200,{'Content-Type':photoType(name),'Content-Length':data.length,'Cache-Control':'private, max-age=86400'}); res.end(req.method==='HEAD'?undefined:data);}
-      else if (!serveFile(req, res, path.join(cfg.uploadsDir, name), { immutable: true })) throw new HttpError(404, 'Archivo no encontrado');
+      if (!PHOTO_RE.test(name) || !(await photoAllowed(db,session.user,name))) throw new HttpError(404,'Archivo no encontrado');
+      if(cfg.databaseUrl){const data=await getPhoto(cfg,name); res.writeHead(200,{'Content-Type':photoType(name),'Content-Length':data.length,'Cache-Control':'private, no-store'}); res.end(req.method==='HEAD'?undefined:data);}
+      else if (!serveFile(req, res, path.join(cfg.uploadsDir, name), { immutable: false })) throw new HttpError(404, 'Archivo no encontrado');
       return;
     }
     const file = path.normalize(path.join(cfg.publicDir, rel === '/' ? 'index.html' : rel));

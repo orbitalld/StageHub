@@ -40,6 +40,7 @@ export function copyPhoto(cfg, name) {
 export async function releasePhoto({ db, cfg }, name) {
   if (!name || !PHOTO_RE.test(name)) return;
   if ((await db.prepare('SELECT 1 FROM items WHERE photo = ?').get(name))) return;
+  await db.prepare('DELETE FROM company_photo_uploads WHERE photo=?').run(name);
   try { if(cfg.databaseUrl) await deletePhoto(cfg,name); else fs.unlinkSync(path.join(cfg.uploadsDir,name)); } catch(e){ if(cfg.databaseUrl) console.error('[storage] limpieza:',e.message); }
 }
 

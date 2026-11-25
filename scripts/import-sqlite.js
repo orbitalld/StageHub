@@ -9,8 +9,8 @@ const src=process.argv[2];const cfg=buildConfig();
 if(!src || !cfg.databaseUrl){console.error('Uso: npm run import-sqlite -- <carpeta con stagehub.db y uploads> (configura .env antes)');process.exit(1);}
 const root=path.resolve(src);const file=path.join(root,'stagehub.db');
 if(!fs.existsSync(file)){console.error('No existe stagehub.db en esa carpeta');process.exit(1);}
-const tables=['users','companies','categories','subcategories','items','units','audit_log','stock_snapshots','company_stock_snapshots','settings','counters'];
-const ids=new Set(['users','categories','subcategories','items','units','audit_log','companies']);
+const tables=['users','companies','categories','subcategories','items','units','audit_log','stock_snapshots','company_stock_snapshots','settings','counters','company_members','company_invitations'];
+const ids=new Set(['users','categories','subcategories','items','units','audit_log','companies','company_invitations']);
 let local,db;
 try {
   local=openDb(file);migrate(local,cfg.migrationsDir,{backupDir:path.join(root,'backups')});

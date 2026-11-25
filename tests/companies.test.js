@@ -15,7 +15,7 @@ test('migración de inventario previo asigna empresas sin perder equipos, unidad
  for(const file of ['001_fase1_base.sql','002_numeracion_y_notas_estado.sql'])fs.copyFileSync(path.join(cfg.migrationsDir,file),path.join(old,file));
  const db=openDb(cfg.dbFile);
  try{migrate(db,old);db.exec(`INSERT INTO categories(name) VALUES ('Test'); INSERT INTO items(internal_code,name,category_id,tracking_mode) VALUES ('TEST-1','Equipo antiguo',1,'individual'); INSERT INTO units(item_id,unit_code,qr_token,unit_number) VALUES (1,'TEST-1-001','qr-old',1); INSERT INTO audit_log(action,entity,entity_id,summary) VALUES ('crear','item',1,'Antes de migrar'); INSERT INTO stock_snapshots(day,total,available,maintenance,out_of_service) VALUES ('2026-10-01',1,1,0,0);`);
- assert.deepEqual(migrate(db,cfg.migrationsDir),['003_empresas.sql','004_usuarios.sql','005_company_logos.sql']);assert.equal(db.prepare('SELECT company_id FROM items').get().company_id,1);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM units').get().n,1);assert.equal(db.prepare('SELECT company_id FROM audit_log').get().company_id,1);assert.equal(db.prepare('SELECT total FROM company_stock_snapshots').get().total,1);assert.deepEqual(migrate(db,cfg.migrationsDir),[]);
+ assert.deepEqual(migrate(db,cfg.migrationsDir),['003_empresas.sql','004_usuarios.sql','005_company_logos.sql','006_company_access.sql']);assert.equal(db.prepare('SELECT company_id FROM items').get().company_id,1);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM units').get().n,1);assert.equal(db.prepare('SELECT company_id FROM audit_log').get().company_id,1);assert.equal(db.prepare('SELECT total FROM company_stock_snapshots').get().total,1);assert.deepEqual(migrate(db,cfg.migrationsDir),[]);
  }finally{db.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
 
@@ -25,7 +25,7 @@ test('API de empresas: separación, permisos, inventario, unidades, historial, t
  async function call(method,url,body,company=1,who='admin'){const headers={'X-Requested-With':'stagehub','X-StageHub-Company':String(company),'Content-Type':'application/json'};if(cookies[who])headers.Cookie=cookies[who];const r=await fetch(base+url,{method,headers,body:body===undefined?undefined:JSON.stringify(body)});if(r.headers.get('set-cookie'))cookies[who]=r.headers.get('set-cookie').split(';')[0];return {status:r.status,json:r.status===204?null:await r.json()};}
  try{await start();assert.equal((await call('GET','/api/companies',undefined,1,'anon')).status,401);assert.equal((await call('POST','/api/auth/setup',{username:'admin',full_name:'Admin',password:'clave-segura-123'})).status,201);
  await createUser(app.db,{username:'lector',full_name:'Lector',role:'consulta',password:'clave-segura-123'});await call('POST','/api/auth/login',{username:'lector',password:'clave-segura-123'},1,'reader');
- assert.equal((await call('POST','/api/companies',{name:'No autorizado'},1,'reader')).status,403);
+ assert.equal((await call('PUT','/api/companies/1',{name:'No autorizado'},1,'reader')).status,403);
  assert.equal((await call('PUT','/api/companies/1',{name:'Orbital'})).status,200);
  const company=await call('POST','/api/companies',{name:'Segunda',rut:'123'});assert.equal(company.status,201);const b=company.json.id;
  assert.equal((await call('POST','/api/companies',{name:'segunda'})).status,409);

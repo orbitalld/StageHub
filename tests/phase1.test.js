@@ -43,7 +43,8 @@ test('primer arranque: requiere configuración y crea el administrador', async (
   assert.equal(r.status, 409, 'no se puede repetir la configuración inicial');
   // usuarios de otros roles para probar permisos
   for (const [u, role] of [['bodega1', 'bodega'], ['consulta1', 'consulta'], ['tecnico1', 'tecnico']]) {
-    await createUser(app.db, { username: u, full_name: u, role, password: 'clave-segura-1' });
+    const created=await createUser(app.db, { username: u, full_name: u, role, password: 'clave-segura-1' });
+    app.db.prepare('INSERT INTO company_members VALUES (?,?,?)').run(1,created.id,role==='bodega'?'inventory':'reader');
   }
 });
 

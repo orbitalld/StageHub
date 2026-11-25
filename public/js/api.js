@@ -1,4 +1,4 @@
-import { state } from './state.js';
+import { state } from './state.js?v=0.4.3';
 // Cliente HTTP: toda comunicación pasa por el backend, que valida y aplica las reglas.
 export class ApiError extends Error {
   constructor(status, message, details) { super(message); this.status = status; this.details = details; }

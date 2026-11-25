@@ -37,15 +37,18 @@ test('registro, aprobación, permisos reales por rol, empresas visibles y revoca
   assert.equal((await call('master','PUT',`/api/users/${masterId}`,{...approval,role:'user'})).status,409);
   const co=await call('master','POST','/api/companies',{name:'Otra empresa'});assert.equal(co.status,201);
   const login=await call('reader','POST','/api/auth/login',{username:'PERSONA@example.com',password});assert.equal(login.status,200);assert.equal(login.json.user.role,'user');
+  assert.equal((await call('reader','GET','/api/companies')).json.length,0);
+  for(const id of [1,co.json.id])assert.equal((await call('master','PUT',`/api/companies/${id}/members/${u.id}`,{role:'reader'})).status,200);
   assert.equal((await call('reader','GET','/api/companies')).json.length,2);
   assert.equal((await call('reader','GET','/api/items',undefined,co.json.id)).status,200);
-  for(const [method,url,body] of [['POST','/api/items',{}],['POST','/api/companies',{name:'No'}],['GET','/api/users'],['PUT',`/api/users/${u.id}`,{...approval,role:'master'}]])assert.equal((await call('reader',method,url,body)).status,403);
+  for(const [method,url,body] of [['POST','/api/items',{}],['PUT','/api/companies/1',{name:'No'}],['GET','/api/users'],['PUT',`/api/users/${u.id}`,{...approval,role:'master'}]])assert.equal((await call('reader',method,url,body)).status,403);
   assert.equal((await call('master','PUT',`/api/users/${u.id}`,{...approval,role:'admin'})).status,200);
   assert.equal((await call('reader','GET','/api/items')).status,401);
   assert.equal((await call('reader','POST','/api/auth/login',{username:email,password})).json.user.role,'admin');
+  assert.equal((await call('master','PUT',`/api/companies/${co.json.id}/members/${u.id}`,{role:'inventory'})).status,200);
   const cat=(await call('reader','GET','/api/categories')).json[0];
   assert.equal((await call('reader','POST','/api/items',{name:'Equipo de prueba',category_id:cat.id,tracking_mode:'cantidad',qty_total:2},co.json.id)).status,201);
-  assert.equal((await call('reader','POST','/api/companies',{name:'No'})).status,403);
+  assert.equal((await call('reader','PUT','/api/companies/1',{name:'No'})).status,403);
   assert.equal((await call('reader','GET','/api/users')).status,403);
   assert.equal((await call('master','PUT',`/api/users/${u.id}`,{...approval,role:'admin',active:false})).status,200);
   assert.equal((await call('reader','GET','/api/items')).status,401);
@@ -76,11 +79,11 @@ test('migración v0.3 conserva usuarios, hashes, sesiones y asigna tres roles',(
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'stagehub-migration-users-'));const cfg=buildConfig({dataDir:dir,databaseUrl:''});const old=path.join(dir,'old');fs.mkdirSync(old);
   const db=openDb(cfg.dbFile);
   try{
-    for(const f of fs.readdirSync(cfg.migrationsDir).filter(f=>!f.startsWith('004')&&!f.startsWith('005')))fs.copyFileSync(path.join(cfg.migrationsDir,f),path.join(old,f));
+    for(const f of fs.readdirSync(cfg.migrationsDir).filter(f=>!f.startsWith('004')&&!f.startsWith('005')&&!f.startsWith('006')))fs.copyFileSync(path.join(cfg.migrationsDir,f),path.join(old,f));
     migrate(db,old);
     for(const role of ['admin','bodega','supervisor','tecnico','consulta'])db.prepare('INSERT INTO users(username,full_name,password_hash,role) VALUES (?,?,?,?)').run(role,role,'hash-historico',role);
     db.prepare('INSERT INTO sessions(token_hash,user_id,expires_at) VALUES (?,?,?)').run('sesion',1,'2099-01-01 00:00:00');
-    assert.deepEqual(migrate(db,cfg.migrationsDir),['004_usuarios.sql','005_company_logos.sql']);
+    assert.deepEqual(migrate(db,cfg.migrationsDir),['004_usuarios.sql','005_company_logos.sql','006_company_access.sql']);
     const rows=db.prepare('SELECT * FROM users ORDER BY id').all();assert.deepEqual(rows.map(effectiveRole),['master','admin','user','user','user']);assert.ok(rows.every(u=>u.password_hash==='hash-historico'&&u.active===1&&u.approval_status==='approved'));assert.equal(db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n,1);assert.deepEqual(migrate(db,cfg.migrationsDir),[]);
   }finally{db.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
@@ -95,6 +98,7 @@ test('Master edita nombres, revoca sesiones y elimina cuentas sin perder equipos
   assert.equal((await call('master','DELETE',`/api/users/${masterId}`)).status,409);
   assert.equal((await call('master','POST',`/api/users/${masterId}/revoke-sessions`)).status,409);
   for(const who of ['admin1','admin2'])assert.equal((await call(who,'POST','/api/auth/login',{username:email,password})).status,200);
+  assert.equal((await call('master','PUT',`/api/companies/1/members/${u.id}`,{role:'inventory'})).status,200);
   const cat=(await call('admin1','GET','/api/categories')).json[0];
   const item=await call('admin1','POST','/api/items',{name:'Equipo conservado',category_id:cat.id,tracking_mode:'cantidad',qty_total:2});assert.equal(item.status,201);
   assert.equal((await call('admin1','DELETE',`/api/users/${masterId}`)).status,403);

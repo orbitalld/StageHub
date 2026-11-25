@@ -1,6 +1,6 @@
-import { get, post, put, del } from '../api.js';
-import { can } from '../state.js';
-import { h, icon, badge, field, modal, guarded, toast, confirmDialog, MODE_LABEL, clear } from '../ui.js';
+import { get, post, put, del } from '../api.js?v=0.4.3';
+import { can } from '../state.js?v=0.4.3';
+import { h, icon, badge, field, modal, guarded, toast, confirmDialog, MODE_LABEL, clear } from '../ui.js?v=0.4.3';
 
 export default async function categoriesPage(el) {
   const canWrite = can('categories:write');

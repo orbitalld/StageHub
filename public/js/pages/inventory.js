@@ -1,7 +1,7 @@
-import { get, post, del } from '../api.js';
-import { can, state, companyName } from '../state.js';
-import { h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js';
-import { openItemForm } from './item-form.js';
+import { get, post, del } from '../api.js?v=0.4.3';
+import { can, state, companyName } from '../state.js?v=0.4.3';
+import { h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js?v=0.4.3';
+import { openItemForm } from './item-form.js?v=0.4.3';
 
 const SORTABLE = { name: 'Equipo', code: 'Código', category: 'Categoría', total: 'Total', available: 'Disp.' };
 

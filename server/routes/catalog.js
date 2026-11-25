@@ -2,8 +2,8 @@ import { selectedCompany } from './companies.js';
 import * as cat from '../services/catalog.js';
 
 export function registerCatalogRoutes(router, { db }) {
-  const W = { perm: 'categories:write' };
-  router.add('GET', '/api/categories', { perm: 'inventory:read' }, async c => (await cat.listCatalog(db,await selectedCompany(db,c))));
+  const W = { perm: 'companies:write' };
+  router.add('GET', '/api/categories', {}, async c => (await cat.listCatalog(db,await selectedCompany(db,c))));
   router.add('POST', '/api/categories', W, async (c) => { c.status = 201; return { id: (await cat.createCategory(db, c.user, c.body)) }; });
   router.add('PUT', '/api/categories/:id', W, async (c) => { (await cat.updateCategory(db, c.user, Number(c.params.id), c.body)); return { ok: true }; });
   router.add('DELETE', '/api/categories/:id', W, async (c) => { (await cat.deleteCategory(db, c.user, Number(c.params.id))); c.status = 204; });

@@ -1,3 +1,4 @@
+import { companyRole, requireCompany, isMaster } from '../company-access.js';
 import { HttpError } from '../http.js';
 import { V } from '../validate.js';
 import { tx } from '../db.js';
@@ -5,11 +6,12 @@ import { savePhoto, releaseLogo, MAX_LOGO_BYTES } from '../services/photos.js';
 import { audit } from '../audit.js';
 import { snapshotStock, getItem } from '../services/inventory.js';
 
-export async function selectedCompany(db, c) {
+export async function selectedCompany(db, c, perm='inventory:read') {
   const raw = c.req.headers['x-stagehub-company'] ?? '1';
   if (!/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw)) || Number(raw)<1) throw new HttpError(400,'Empresa inválida');
   const company = await db.prepare('SELECT * FROM companies WHERE id=?').get(Number(raw));
   if (!company) throw new HttpError(404,'Empresa no encontrada');
+  await requireCompany(db,c.user,company.id,perm);
   return company.id;
 }
 export async function requireItemCompany(db, id, companyId, unit=false) {
@@ -18,22 +20,23 @@ export async function requireItemCompany(db, id, companyId, unit=false) {
 }
 function fields(body){return [V.str(body,'name','El nombre',{required:true,max:150}),V.str(body,'rut','El RUT',{max:30}),V.str(body,'contact','El contacto',{max:150}),V.str(body,'notes','Las notas',{max:1000})];}
 export function registerCompanyRoutes(router,{db,cfg}) {
-  const R={perm:'inventory:read'}, W={perm:'companies:write'};
-  router.add('GET','/api/companies',R,async()=>await db.prepare(`SELECT c.*, (SELECT COUNT(*) FROM items i WHERE i.company_id=c.id) AS item_count,
+  const W={perm:'companies:write'};
+  router.add('GET','/api/companies',{},async c=>{const master=isMaster(c.user);const rows=await db.prepare(`SELECT c.*, (SELECT COUNT(*) FROM items i WHERE i.company_id=c.id) AS item_count,
     (SELECT COALESCE(SUM(v.total),0) FROM items i JOIN v_item_stock v ON v.item_id=i.id WHERE i.company_id=c.id) AS total
-    FROM companies c ORDER BY c.id`).all());
-  router.add('POST','/api/companies',W,async c=>await tx(db,async()=>{
+    FROM companies c ${master?'':'JOIN company_members m ON m.company_id=c.id AND m.user_id=?'} ORDER BY c.id`).all(...(master?[]:[c.user.id])); const visible=[]; for(const row of rows){const role=await companyRole(db,c.user,row.id);if(role)visible.push({...row,member_role:role});}return visible;});
+  router.add('POST','/api/companies',{},async c=>await tx(db,async()=>{
     const f=fields(c.body);
     const id=Number((await db.prepare('INSERT INTO companies(name,rut,contact,notes) VALUES (?,?,?,?)').run(...f)).lastInsertRowid);
-    await audit(db,c.user,'crear','company',id,`Empresa creada: ${f[0]}`);
+    await db.prepare('INSERT INTO company_members(company_id,user_id,member_role) VALUES (?,?,?)').run(id,c.user.id,'owner');
+    await audit(db,{...c.user,company_id:id},'crear','company',id,`Empresa creada: ${f[0]}`);
     await snapshotStock(db,id); c.status=201;
     return await db.prepare('SELECT * FROM companies WHERE id=?').get(id);
   }));
-  router.add('PUT','/api/companies/:id',W,async c=>await tx(db,async()=>{
-    const id=Number(c.params.id); const f=fields(c.body);
+  router.add('PUT','/api/companies/:id',{},async c=>await tx(db,async()=>{
+    const id=Number(c.params.id); await requireCompany(db,c.user,id,'company:edit'); const f=fields(c.body);
     if (!Number.isSafeInteger(id)||!(await db.prepare('SELECT id FROM companies WHERE id=?').get(id))) throw new HttpError(404,'Empresa no encontrada');
     await db.prepare('UPDATE companies SET name=?,rut=?,contact=?,notes=? WHERE id=?').run(...f,id);
-    await audit(db,c.user,'editar','company',id,`Empresa editada: ${f[0]}`);
+    await audit(db,{...c.user,company_id:id},'editar','company',id,`Empresa editada: ${f[0]}`);
     return await db.prepare('SELECT * FROM companies WHERE id=?').get(id);
   }));
   // Permiso companies:write exclusivo del Master. El cliente no puede asignar rutas de archivo.
@@ -61,6 +64,7 @@ export function registerCompanyRoutes(router,{db,cfg}) {
     if (from===to) throw new HttpError(409,'El equipo ya pertenece a esta empresa');
     const target=await db.prepare('SELECT * FROM companies WHERE id=?').get(to);
     if (!target) throw new HttpError(404,'Empresa de destino no encontrada');
+    await db.prepare('DELETE FROM company_photo_uploads WHERE photo=(SELECT photo FROM items WHERE id=?)').run(id);
     await db.prepare("UPDATE items SET company_id=?,updated_by=?,updated_at=datetime('now') WHERE id=?").run(to,c.user.id,id);
     const details={item_id:id,empresa_origen:from,empresa_destino:to};
     await audit(db,{...c.user,company_id:from},'trasladar','item',id,`Equipo trasladado a ${target.name}`,details);

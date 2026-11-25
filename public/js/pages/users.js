@@ -1,8 +1,9 @@
-import { get, put, post, del } from '../api.js';
-import { can, state } from '../state.js';
-import { h, clear, badge, field, guarded, fmtDateTime, confirmDialog } from '../ui.js';
+import { get, put, post, del } from '../api.js?v=0.4.3';
+import { roleSelect, roles } from './members.js?v=0.4.3';
+import { can, state } from '../state.js?v=0.4.3';
+import { h, clear, badge, field, guarded, fmtDateTime, confirmDialog, modal } from '../ui.js?v=0.4.3';
 
-const labels={user:'Usuario · Solo lectura',admin:'Administrador · Inventario',master:'Master · Acceso completo'};
+const labels={user:'Usuario · Permisos por empresa',admin:'Administrador · Histórico (permisos por empresa)' ,master:'Master · Acceso completo'};
 export default async function usersPage(el){
   if(!can('users:write'))throw new Error('Solo el Master puede gestionar usuarios');
   let users=await get('/api/users');
@@ -43,7 +44,13 @@ export default async function usersPage(el){
       h('div',{class:'muted small',style:{overflowWrap:'anywhere'}},u.email||`Usuario: ${u.username}`),u.email?h('div',{class:'small'},u.email_verified?'Correo confirmado':u.verification_required?'Correo sin verificar · código obligatorio':'Correo sin verificar automáticamente'):null,
       h('div',{class:'muted small'},`Último acceso: ${fmtDateTime(u.last_login_at)}`),err,field('Nombre completo',name),field('Rol',role),field('Estado de solicitud',status),h('label',{class:'row'},active,' Permitir acceso cuando esté aprobada'),
       !own&&u.email&&!u.email_verified&&!u.verification_required&&u.approval_status!=='approved'?h('label',{class:'row'},manual,' Confirmo que comprobé manualmente el correo de esta persona'):null,
-      own?h('p',{class:'muted small'},'Tu cuenta está protegida contra cambios de permisos, cierre forzado de sesiones y eliminación.'):h('div',{class:'row wrap user-actions'},btn,revoke,remove));
+      own?h('p',{class:'muted small'},'Tu cuenta está protegida contra cambios de permisos, cierre forzado de sesiones y eliminación.'):h('div',{class:'row wrap user-actions'},btn,h('button',{class:'btn',disabled:!u.active||u.approval_status!=='approved',onclick:()=>assign(u).catch(e=>{err.hidden=false;err.textContent=e.message;})},'Asignar empresas'),revoke,remove));
+  }
+  async function assign(u){
+    const memberships=await get(`/api/users/${u.id}/companies`), companies=await get('/api/companies');
+    const body=h('div',{class:'stack'},h('p',{class:'muted'},'Asigna una o varias empresas. Cada cambio se guarda individualmente.'));
+    for(const co of companies){const previous=memberships.find(m=>m.company_id===co.id);const select=h('select',{},h('option',{value:''},'Sin acceso'),...Object.entries(roles).filter(([r])=>r!=='master').map(([value,label])=>h('option',{value},label)));select.value=previous?.member_role||'';const err=h('div',{class:'error-box',hidden:true});let current=select.value;const save=h('button',{class:'btn primary',onclick:()=>guarded(save,err,async()=>{if(select.value===current)return;if(select.value)await put(`/api/companies/${co.id}/members/${u.id}`,{role:select.value});else if(current)await del(`/api/companies/${co.id}/members/${u.id}`);current=select.value;notice.textContent=`Acceso actualizado: ${u.full_name} · ${co.name}`;save.textContent='Guardado';})},'Guardar');select.addEventListener('change',()=>save.textContent='Guardar');body.append(h('section',{class:'card stack'},h('strong',{},co.name),select,err,save));}
+    const m=modal({title:`Empresas de ${u.full_name}`,body,footer:[h('button',{class:'btn',onclick:()=>m.close()},'Cerrar')]});
   }
   draw();
 }
