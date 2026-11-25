@@ -18,7 +18,11 @@ export async function createUser(db, input) {
   if ((await db.prepare('SELECT 1 FROM users WHERE username = ?').get(username))) {
     throw new HttpError(409, 'Ya existe un usuario con ese nombre', { field: 'username' });
   }
-  const r = (await db.prepare('INSERT INTO users(username, full_name, password_hash, role, access_role) VALUES (?,?,?,?,?)')
-    .run(username, full_name, hashPassword(input.password), legacyRole(role), role));
+  const values=[username,full_name,hashPassword(input.password),legacyRole(role),role];
+  // SQLite reutiliza el último ROWID eliminado; evita asociar auditorías antiguas a cuentas nuevas.
+  const r = db.dialect==='postgres'
+    ? await db.prepare('INSERT INTO users(username, full_name, password_hash, role, access_role) VALUES (?,?,?,?,?)').run(...values)
+    : await db.prepare(`INSERT INTO users(id,username,full_name,password_hash,role,access_role)
+      SELECT MAX(COALESCE((SELECT MAX(id) FROM users),0),COALESCE((SELECT MAX(entity_id) FROM audit_log WHERE entity='user'),0))+1,?,?,?,?,?`).run(...values);
   return (await db.prepare('SELECT * FROM users WHERE id = ?').get(Number(r.lastInsertRowid)));
 }

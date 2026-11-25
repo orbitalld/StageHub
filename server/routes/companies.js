@@ -1,6 +1,7 @@
 import { HttpError } from '../http.js';
 import { V } from '../validate.js';
 import { tx } from '../db.js';
+import { savePhoto, releaseLogo, MAX_LOGO_BYTES } from '../services/photos.js';
 import { audit } from '../audit.js';
 import { snapshotStock, getItem } from '../services/inventory.js';
 
@@ -16,7 +17,7 @@ export async function requireItemCompany(db, id, companyId, unit=false) {
   if (!Number.isSafeInteger(id) || id<1 || !(await db.prepare(sql).get(id,companyId))) throw new HttpError(404,unit?'Unidad no encontrada en esta empresa':'Equipo no encontrado en esta empresa');
 }
 function fields(body){return [V.str(body,'name','El nombre',{required:true,max:150}),V.str(body,'rut','El RUT',{max:30}),V.str(body,'contact','El contacto',{max:150}),V.str(body,'notes','Las notas',{max:1000})];}
-export function registerCompanyRoutes(router,{db}) {
+export function registerCompanyRoutes(router,{db,cfg}) {
   const R={perm:'inventory:read'}, W={perm:'companies:write'};
   router.add('GET','/api/companies',R,async()=>await db.prepare(`SELECT c.*, (SELECT COUNT(*) FROM items i WHERE i.company_id=c.id) AS item_count,
     (SELECT COALESCE(SUM(v.total),0) FROM items i JOIN v_item_stock v ON v.item_id=i.id WHERE i.company_id=c.id) AS total
@@ -35,6 +36,24 @@ export function registerCompanyRoutes(router,{db}) {
     await audit(db,c.user,'editar','company',id,`Empresa editada: ${f[0]}`);
     return await db.prepare('SELECT * FROM companies WHERE id=?').get(id);
   }));
+  // Permiso companies:write exclusivo del Master. El cliente no puede asignar rutas de archivo.
+  async function changeLogo(c, upload) {
+    const id=Number(c.params.id);
+    const old=Number.isSafeInteger(id)&&id>0 ? await db.prepare('SELECT * FROM companies WHERE id=?').get(id) : null;
+    if (!old) throw new HttpError(404,'Empresa no encontrada');
+    if (!upload && !old.logo) return {logo:null};
+    const logo=upload ? await savePhoto(cfg,c.rawBody,{logo:true}) : null;
+    try {
+      await tx(db,async()=>{
+        await db.prepare('UPDATE companies SET logo=? WHERE id=?').run(logo,id);
+        await audit(db,{...c.user,company_id:id},'editar','company',id,`${logo?'Logo actualizado':'Logo eliminado'}: ${old.name}`);
+      });
+    } catch(e) { if(logo) await releaseLogo({db,cfg},logo); throw e; }
+    await releaseLogo({db,cfg},old.logo);
+    return {logo};
+  }
+  router.add('POST','/api/companies/:id/logo',{...W,raw:MAX_LOGO_BYTES},c=>changeLogo(c,true));
+  router.add('DELETE','/api/companies/:id/logo',W,c=>changeLogo(c,false));
   // Traslada la referencia completa, con sus unidades, fotografía e historial. Nunca divide cantidades.
   router.add('POST','/api/items/:id/transfer',W,async c=>await tx(db,async()=>{
     const id=Number(c.params.id), from=await selectedCompany(db,c), to=V.int(c.body,'company_id','La empresa de destino',{required:true,min:1,max:Number.MAX_SAFE_INTEGER});

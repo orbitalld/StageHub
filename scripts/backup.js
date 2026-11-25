@@ -5,7 +5,7 @@ import { buildConfig } from '../server/config.js';
 import { openConfiguredDb, withDb, tx } from '../server/db.js';
 import { createBackup } from '../server/backup.js';
 import { getPhoto, checkStorage } from '../server/storage.js';
-import { PHOTO_RE } from '../server/services/photos.js';
+import { PHOTO_RE, LOGO_RE } from '../server/services/photos.js';
 const cfg=buildConfig();let db;
 try {
   db=await openConfiguredDb(cfg);
@@ -21,7 +21,7 @@ try {
         const result={}; for(const t of tables)result[t]=await db.prepare(`SELECT * FROM ${t}`).all();return result;
       });
       fs.writeFileSync(path.join(dir,'database.json'),JSON.stringify({format:'stagehub-postgres-v1',exportedAt:new Date().toISOString(),tables:data},null,2),{mode:0o600});
-      for(const name of new Set(data.items.map(i=>i.photo).filter(n=>n&&PHOTO_RE.test(n))))fs.writeFileSync(path.join(dir,'uploads',name),await getPhoto(cfg,name),{mode:0o600});
+      for(const name of new Set([...data.items.map(i=>i.photo).filter(n=>n&&PHOTO_RE.test(n)),...data.companies.map(c=>c.logo).filter(n=>n&&LOGO_RE.test(n))]))fs.writeFileSync(path.join(dir,'uploads',name),await getPhoto(cfg,name),{mode:0o600});
     });
     fs.writeFileSync(path.join(dir,'COMPLETO.txt'),'Exportación terminada. Contiene hashes de contraseña: mantener privada. No incluye sesiones.\n');
     console.log('Exportación creada en:',dir);

@@ -66,6 +66,7 @@ export function registerUserRoutes(router,{db,cfg}) {
     const u=await db.prepare('SELECT * FROM users WHERE id=?').get(id);
     if(!u)throw new HttpError(404,'Usuario no encontrado');
     if(id===c.user.id)throw new HttpError(409,'No puedes cambiar tus propios permisos ni desactivar tu cuenta');
+    const name=c.body.full_name===undefined?u.full_name:V.str(c.body,'full_name','El nombre',{required:true,max:100});
     const role=V.oneOf(c.body,'role','El rol',Object.keys(ROLE_LABELS));
     const status=V.oneOf(c.body,'approval_status','El estado',['pending','approved','rejected']);
     if(typeof c.body.active!=='boolean')V.fail('active','El estado activo debe ser verdadero o falso');
@@ -76,9 +77,36 @@ export function registerUserRoutes(router,{db,cfg}) {
       const n=(await db.prepare("SELECT COUNT(*) AS n FROM users WHERE access_role='master' AND active=? AND approval_status='approved'").get(bool(true))).n;
       if(n<=1)throw new HttpError(409,'Debe quedar al menos un Master activo');
     }
-    await db.prepare('UPDATE users SET role=?,access_role=?,approval_status=?,active=? WHERE id=?').run(legacyRole(role),role,status,bool(active),id);
+    await db.prepare('UPDATE users SET full_name=?,role=?,access_role=?,approval_status=?,active=? WHERE id=?').run(name,legacyRole(role),role,status,bool(active),id);
     if(role!==effectiveRole(u)||!active||status!==u.approval_status)await db.prepare('DELETE FROM sessions WHERE user_id=?').run(id);
     await audit(db,c.user,'editar','user',id,`Permisos de ${u.full_name}: ${ROLE_LABELS[role]} / ${status}${active?'':' (sin acceso)'}`,{role,status,active});
     return listed(await db.prepare('SELECT * FROM users WHERE id=?').get(id));
   }));
+  async function target(c){
+    const id=Number(c.params.id);
+    if(!Number.isSafeInteger(id)||id<1)throw new HttpError(404,'Usuario no encontrado');
+    const u=await db.prepare('SELECT * FROM users WHERE id=?').get(id);
+    if(!u)throw new HttpError(404,'Usuario no encontrado');
+    if(Number(c.user.id)===id)throw new HttpError(409,'No puedes realizar esta acción sobre tu propia cuenta');
+    return u;
+  }
+  router.add('POST','/api/users/:id/revoke-sessions',W,async c=>await tx(db,async()=>{
+    const u=await target(c);
+    const result=await db.prepare('DELETE FROM sessions WHERE user_id=?').run(u.id);
+    await audit(db,c.user,'editar','user',u.id,`Sesiones revocadas: ${u.full_name}`,{sessions_revoked:result.changes});
+    return {revoked:result.changes};
+  }));
+  router.add('DELETE','/api/users/:id',W,async c=>await tx(db,async()=>{
+    const u=await target(c);
+    if(effectiveRole(u)==='master'&&u.active&&u.approval_status==='approved'){
+      const n=(await db.prepare("SELECT COUNT(*) AS n FROM users WHERE access_role='master' AND active=? AND approval_status='approved'").get(bool(true))).n;
+      if(Number(n)<=1)throw new HttpError(409,'Debe quedar al menos un Master activo');
+    }
+    await db.prepare('DELETE FROM sessions WHERE user_id=?').run(u.id);
+    await audit(db,c.user,'eliminar','user',u.id,`Cuenta eliminada: ${u.full_name}`,{role:effectiveRole(u),approval_status:u.approval_status});
+    // Las claves foráneas preservan equipos y auditoría (SET NULL); las sesiones se eliminan.
+    await db.prepare('DELETE FROM users WHERE id=?').run(u.id);
+    c.status=204;
+  }));
 }
+

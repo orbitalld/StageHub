@@ -230,3 +230,14 @@ input[type=file] { display: block; width: 100%; max-width: 100%; }
 .user-card select { width: 100%; min-width: 0; }
 .login-card { max-width: 100%; }
 @media(max-width: 860px) { .user-card .btn { min-height: 44px; width: 100%; } .login-card .row { flex-wrap: wrap; } }
+
+.user-actions { gap: 8px; }
+.user-actions .btn { min-height: 44px; }
+@media(max-width: 860px) { .user-actions { display: grid; grid-template-columns: minmax(0,1fr); } }
+
+/* v0.4.2: logotipos de empresas, proporción original y diseño adaptable. */
+.company-logo { width:64px; height:64px; flex:0 0 64px; display:grid; place-items:center; overflow:hidden; border:1px solid var(--border); border-radius:10px; background:var(--panel-2); color:var(--muted); }
+.company-logo img {width:100%;height:100%;object-fit:contain;padding:4px;}
+.company-logo-preview {display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.company-logo-preview .company-logo {width:112px;height:112px;flex-basis:112px;}
+@media(max-width:480px){.company-logo{width:52px;height:52px;flex-basis:52px;} .company-logo-preview .company-logo{width:88px;height:88px;flex-basis:88px;}}

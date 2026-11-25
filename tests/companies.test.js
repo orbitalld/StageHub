@@ -15,7 +15,7 @@ test('migración de inventario previo asigna empresas sin perder equipos, unidad
  for(const file of ['001_fase1_base.sql','002_numeracion_y_notas_estado.sql'])fs.copyFileSync(path.join(cfg.migrationsDir,file),path.join(old,file));
  const db=openDb(cfg.dbFile);
  try{migrate(db,old);db.exec(`INSERT INTO categories(name) VALUES ('Test'); INSERT INTO items(internal_code,name,category_id,tracking_mode) VALUES ('TEST-1','Equipo antiguo',1,'individual'); INSERT INTO units(item_id,unit_code,qr_token,unit_number) VALUES (1,'TEST-1-001','qr-old',1); INSERT INTO audit_log(action,entity,entity_id,summary) VALUES ('crear','item',1,'Antes de migrar'); INSERT INTO stock_snapshots(day,total,available,maintenance,out_of_service) VALUES ('2026-10-01',1,1,0,0);`);
- assert.deepEqual(migrate(db,cfg.migrationsDir),['003_empresas.sql','004_usuarios.sql']);assert.equal(db.prepare('SELECT company_id FROM items').get().company_id,1);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM units').get().n,1);assert.equal(db.prepare('SELECT company_id FROM audit_log').get().company_id,1);assert.equal(db.prepare('SELECT total FROM company_stock_snapshots').get().total,1);assert.deepEqual(migrate(db,cfg.migrationsDir),[]);
+ assert.deepEqual(migrate(db,cfg.migrationsDir),['003_empresas.sql','004_usuarios.sql','005_company_logos.sql']);assert.equal(db.prepare('SELECT company_id FROM items').get().company_id,1);assert.equal(db.prepare('SELECT COUNT(*) AS n FROM units').get().n,1);assert.equal(db.prepare('SELECT company_id FROM audit_log').get().company_id,1);assert.equal(db.prepare('SELECT total FROM company_stock_snapshots').get().total,1);assert.deepEqual(migrate(db,cfg.migrationsDir),[]);
  }finally{db.close();fs.rmSync(dir,{recursive:true,force:true});}
 });
 

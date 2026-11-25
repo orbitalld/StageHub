@@ -6,6 +6,8 @@ import { HttpError } from '../http.js';
 import { putPhoto, deletePhoto } from '../storage.js';
 
 export const PHOTO_RE = /^[a-f0-9]{32}\.(jpg|png|webp)$/;
+export const LOGO_RE = /^logo-[a-f0-9]{32}\.(jpg|png|webp)$/;
+export const MAX_LOGO_BYTES = 2 * 1024 * 1024;
 export const MAX_PHOTO_BYTES = 6 * 1024 * 1024;
 
 function detectExt(buf) {
@@ -15,11 +17,12 @@ function detectExt(buf) {
   return null;
 }
 
-export async function savePhoto(cfg, buf) {
+export async function savePhoto(cfg, buf, { logo = false } = {}) {
+  if (buf.length > (logo ? MAX_LOGO_BYTES : MAX_PHOTO_BYTES)) throw new HttpError(413, "La imagen supera el tamaño máximo permitido");
   const ext = detectExt(buf);
   if (!ext) throw new HttpError(415, 'El archivo no es una imagen válida (se admite JPG, PNG o WebP)');
   fs.mkdirSync(cfg.uploadsDir, { recursive: true });
-  const name = `${crypto.randomBytes(16).toString('hex')}.${ext}`;
+  const name = `${logo ? "logo-" : ""}${crypto.randomBytes(16).toString('hex')}.${ext}`;
   if (cfg.databaseUrl) await putPhoto(cfg,name,buf);
   else fs.writeFileSync(path.join(cfg.uploadsDir, name), buf);
   return name;
@@ -38,4 +41,12 @@ export async function releasePhoto({ db, cfg }, name) {
   if (!name || !PHOTO_RE.test(name)) return;
   if ((await db.prepare('SELECT 1 FROM items WHERE photo = ?').get(name))) return;
   try { if(cfg.databaseUrl) await deletePhoto(cfg,name); else fs.unlinkSync(path.join(cfg.uploadsDir,name)); } catch(e){ if(cfg.databaseUrl) console.error('[storage] limpieza:',e.message); }
+}
+
+/** Los logos no pueden ser usados como fotografías de inventario. */
+export async function releaseLogo({db,cfg}, name) {
+  if (!name || !LOGO_RE.test(name)) return;
+  if (await db.prepare('SELECT id FROM companies WHERE logo=?').get(name)) return;
+  try { if (cfg.databaseUrl) await deletePhoto(cfg,name); else fs.unlinkSync(path.join(cfg.uploadsDir,name)); }
+  catch(e) { if (cfg.databaseUrl) console.error('[storage] limpieza de logo:',e.message); }
 }

@@ -11,7 +11,7 @@ import { resolveSession } from './auth.js';
 import { can, effectiveRole } from './permissions.js';
 import { seedCatalog } from './seed.js';
 import { snapshotStock } from './services/inventory.js';
-import { PHOTO_RE } from './services/photos.js';
+import { PHOTO_RE, LOGO_RE } from './services/photos.js';
 import { registerUserRoutes } from './routes/users.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
@@ -103,6 +103,14 @@ export async function createApp(cfg) {
       const name = rel.slice('/uploads/'.length);
       const session = (await resolveSession(db, parseCookies(req.headers.cookie).sid, cfg.sessionDays));
       if (!session) throw new HttpError(401, 'Debes iniciar sesión');
+      if (LOGO_RE.test(name)) {
+        if (!can(effectiveRole(session.user),'inventory:read') || !(await db.prepare('SELECT id FROM companies WHERE logo=?').get(name))) throw new HttpError(404,'Archivo no encontrado');
+        let data;
+        if (cfg.databaseUrl) data=await getPhoto(cfg,name);
+        else {try {data=fs.readFileSync(path.join(cfg.uploadsDir,name));} catch {throw new HttpError(404,'Archivo no encontrado');}}
+        res.writeHead(200,{'Content-Type':photoType(name),'Content-Length':data.length,'Cache-Control':'private, no-store'});
+        res.end(req.method==='HEAD'?undefined:data);return;
+      }
       if (!PHOTO_RE.test(name)) throw new HttpError(404,'Archivo no encontrado');
       if(cfg.databaseUrl){const data=await getPhoto(cfg,name); res.writeHead(200,{'Content-Type':photoType(name),'Content-Length':data.length,'Cache-Control':'private, max-age=86400'}); res.end(req.method==='HEAD'?undefined:data);}
       else if (!serveFile(req, res, path.join(cfg.uploadsDir, name), { immutable: true })) throw new HttpError(404, 'Archivo no encontrado');

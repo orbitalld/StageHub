@@ -171,6 +171,8 @@ ALTER TABLE stagehub.users ADD COLUMN IF NOT EXISTS approval_status text NOT NUL
 ALTER TABLE stagehub.users ADD COLUMN IF NOT EXISTS verification_required integer NOT NULL DEFAULT 0 CHECK (verification_required IN (0,1));
 UPDATE stagehub.users SET access_role=CASE role WHEN 'admin' THEN 'master' WHEN 'bodega' THEN 'admin' ELSE 'user' END WHERE access_role IS NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_ci ON stagehub.users(lower(email));
+-- v0.4.2: logo opcional de empresa.
+ALTER TABLE stagehub.companies ADD COLUMN IF NOT EXISTS logo text;
 REVOKE ALL ON ALL TABLES IN SCHEMA stagehub FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA stagehub FROM PUBLIC, anon, authenticated;
 COMMIT;
