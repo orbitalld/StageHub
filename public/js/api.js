@@ -8,7 +8,7 @@ export async function api(method, url, body, { raw } = {}) {
   if (raw) { opts.body = raw; opts.headers['Content-Type'] = raw.type; }
   else if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
   let res;
-  try { res = await fetch(url, opts); } catch { throw new ApiError(0, 'Sin conexión con el servidor. Verifica que esté encendido y que estés en la misma red.'); }
+  try { res = await fetch(url, opts); } catch { throw new ApiError(0, 'Sin conexión con el servidor. Comprueba tu conexión a Internet e inténtalo de nuevo.'); }
   if (res.status === 204) return null;
   const data = await res.json().catch(() => null);
   if (!res.ok) {

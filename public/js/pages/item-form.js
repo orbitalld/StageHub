@@ -81,11 +81,15 @@ export async function openItemForm({ item = null, onSaved }) {
     photoPrev.replaceChildren(f.photo ? h('div', { class: 'row' }, h('img', { class: 'thumb', src: `/uploads/${f.photo}`, alt: '' }),
       h('button', { class: 'btn ghost', type: 'button', onclick: () => { f.photo = null; renderPhoto(); } }, icon('trash'), 'Quitar')) : h('div', { class: 'muted small' }, 'Sin fotografía'));
   }
+  let uploading = false;
+  const photoStatus = h('div', { class: 'muted small', role: 'status', hidden: true });
   const fileIn = h('input', { type: 'file', accept: 'image/*', onchange: async (e) => {
-    const file = e.target.files[0]; if (!file) return;
-    try { const blob = await resizeImage(file); const r = await api('POST', '/api/uploads/photo', undefined, { raw: blob }); f.photo = r.photo; renderPhoto(); }
-    catch (x) { err.textContent = x.message; err.hidden = false; }
-    e.target.value = '';
+    const file = e.target.files[0]; if (!file || uploading || save.disabled) return;
+    uploading = true; save.disabled = true; fileIn.disabled = true;
+    photoStatus.textContent = 'Procesando y subiendo fotografía…'; photoStatus.hidden = false;
+    try { const blob = await resizeImage(file); const r = await api('POST', '/api/uploads/photo', undefined, { raw: blob }); f.photo = r.photo; renderPhoto(); photoStatus.textContent = 'Fotografía lista.'; }
+    catch (x) { photoStatus.textContent = `No se pudo subir la foto: ${x.message}. Puedes reintentar o guardar sin la nueva fotografía.`; }
+    finally { uploading = false; save.disabled = false; fileIn.disabled = false; e.target.value = ''; }
   } });
 
   // características y accesorios
@@ -107,11 +111,15 @@ export async function openItemForm({ item = null, onSaved }) {
   const save = h('button', { class: 'btn primary', type: 'submit', form: 'itemform' }, editing ? 'Guardar cambios' : 'Crear equipo');
   const form = h('form', { id: 'itemform', class: 'form-grid', onsubmit: (e) => {
     e.preventDefault();
+    if (uploading || save.disabled) return;
+    fileIn.disabled = true;
+    const originalLabel = save.textContent;
+    save.textContent = 'Guardando…';
     guarded(save, err, async () => {
       const payload = { ...f, category_id: Number(f.category_id), subcategory_id: f.subcategory_id || null, specs, accessories };
       const saved = editing ? await put(`/api/items/${item.id}`, payload) : await post('/api/items', payload);
       m.close(); toast(editing ? 'Equipo actualizado' : 'Equipo creado'); onSaved?.(saved);
-    });
+    }).finally(() => { fileIn.disabled = false; save.textContent = originalLabel; });
   } },
   h('div', { class: 'full' }, err),
   h('div', { class: 'full' }, field('Nombre del equipo *', bind('name', { required: true, maxlength: 150, placeholder: 'Ej. Beam 380 Pro' }))),
@@ -126,12 +134,15 @@ export async function openItemForm({ item = null, onSaved }) {
   field('Precio de adquisición', bindNum('acquisition_price', { step: 'any' })),
   h('div', { class: 'full' }, field('Proveedor', bind('supplier', { maxlength: 150 }))),
   h('div', { class: 'form-section' }, 'Detalle'),
-  h('div', { class: 'full' }, field('Fotografía', h('div', { class: 'stack', style: { gap: '8px' } }, fileIn, photoPrev))),
+  h('div', { class: 'full' }, field('Fotografía', h('div', { class: 'stack', style: { gap: '8px' } }, fileIn, photoStatus, photoPrev))),
   h('div', { class: 'full' }, field('Descripción', bindText('description'))),
   h('div', { class: 'full' }, field('Observaciones', bindText('notes'))),
   h('div', { class: 'full' }, field('Características técnicas', specBox)),
   h('div', { class: 'full' }, field('Accesorios incluidos', accBox)));
 
+  form.addEventListener('invalid', (e) => {
+    e.target.scrollIntoView({ block: 'center', inline: 'nearest' });
+  }, true);
   fillSubs(); renderMode(); renderPhoto(); renderSpecs(); renderAcc();
   const m = modal({ title: editing ? `Editar: ${item.name}` : 'Nuevo equipo', wide: true, body: form,
     footer: [h('button', { class: 'btn', type: 'button', onclick: () => m.close() }, 'Cancelar'), save] });

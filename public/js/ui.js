@@ -76,7 +76,8 @@ export function toast(message, type = 'ok') {
 }
 
 export function modal({ title, body, footer, wide = false }) {
-  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  const previousFocus = document.activeElement;
+  const onKey = (e) => { if (e.key === 'Escape' && overlay === [...document.querySelectorAll('.overlay')].at(-1)) close(); };
   const box = h('div', { class: `modal ${wide ? 'wide' : ''}`, role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
     h('header', {}, h('h3', {}, title), h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar', onclick: () => close() }, icon('x'))),
     h('div', { class: 'modal-body' }, body),
@@ -85,12 +86,29 @@ export function modal({ title, body, footer, wide = false }) {
   document.body.append(overlay);
   document.body.classList.add('modal-open');
   document.addEventListener('keydown', onKey);
+  const viewport = window.visualViewport;
+  const mobile = window.matchMedia('(max-width: 860px), (pointer: coarse)');
+  function syncViewport() {
+    if (!viewport) return;
+    overlay.style.setProperty('--dialog-height', `${viewport.height}px`);
+    overlay.style.setProperty('--dialog-top', `${viewport.offsetTop}px`);
+  }
+  viewport?.addEventListener('resize', syncViewport);
+  viewport?.addEventListener('scroll', syncViewport);
+  syncViewport();
   function close() {
+    if (!overlay.isConnected) return;
     overlay.remove();
     document.removeEventListener('keydown', onKey);
+    viewport?.removeEventListener('resize', syncViewport);
+    viewport?.removeEventListener('scroll', syncViewport);
     if (!document.querySelector('.overlay')) document.body.classList.remove('modal-open');
+    if (previousFocus?.isConnected && !mobile.matches) previousFocus.focus({ preventScroll: true });
   }
-  setTimeout(() => box.querySelector('input:not([type=hidden]):not([type=file]), select, textarea')?.focus(), 30);
+  // En móviles no abrir el teclado hasta que la persona toque un campo.
+  if (!mobile.matches) requestAnimationFrame(() => {
+    if (overlay.isConnected) box.querySelector('input:not([type=hidden]):not([type=file]), select, textarea')?.focus({ preventScroll: true });
+  });
   return { close, el: box };
 }
 
@@ -111,11 +129,13 @@ export const field = (label, input, hint) => h('div', { class: 'field' }, h('lab
 
 /** Ejecuta una acción mostrando el error del servidor en un cuadro; deshabilita el botón mientras trabaja. */
 export async function guarded(button, errorBox, fn) {
+  if (button.disabled) return;
   button.disabled = true;
+  button.setAttribute('aria-busy', 'true');
   errorBox.hidden = true;
   try { return await fn(); }
   catch (e) { errorBox.textContent = e.message; errorBox.hidden = false; errorBox.scrollIntoView({ block: 'nearest' }); }
-  finally { button.disabled = false; }
+  finally { button.disabled = false; button.removeAttribute('aria-busy'); }
 }
 
 export function debounce(fn, ms = 300) { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; }

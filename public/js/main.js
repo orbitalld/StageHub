@@ -62,7 +62,7 @@ function renderAuth(mode) {
     h('div', {}, h('h1', {}, setup ? 'Configuración inicial' : 'Iniciar sesión'),
       h('p', { class: 'muted', style: { margin: '4px 0 0' } }, setup ? 'Crea la cuenta del administrador del sistema.' : 'Inventario y producción técnica de eventos.')),
     form)));
-  user.focus();
+  if (!window.matchMedia('(max-width: 860px), (pointer: coarse)').matches) user.focus();
 }
 
 let renderToken = 0;
