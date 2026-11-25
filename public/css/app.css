@@ -250,3 +250,14 @@ input[type=file] { display: block; width: 100%; max-width: 100%; }
 .company-logo-preview {display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .company-logo-preview .company-logo {width:112px;height:112px;flex-basis:112px;}
 @media(max-width:480px){.company-logo{width:52px;height:52px;flex-basis:52px;} .company-logo-preview .company-logo{width:88px;height:88px;flex-basis:88px;}}
+
+/* v0.4.8: sistema y versiones */
+.version-indicator { display:flex; flex-direction:column; gap:3px; padding:6px 10px; overflow-wrap:anywhere; }
+.version-indicator a { color:var(--accent); }
+.version-new { color:#eab54d; font-weight:600; }
+.topbar-version { margin-left:auto; min-width:0; font-size:11px; text-align:right; }
+.topbar-version .version-indicator { padding:0; }
+.topbar-version .version-indicator a { display:none; }
+.system-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.system-history { display:flex; flex-direction:column; align-items:flex-start; gap:8px; border-top:1px solid var(--border); padding-top:12px; overflow-wrap:anywhere; min-width:0; }
+@media(max-width:520px){ .topbar-version .version-indicator { font-size:10px; } .topbar-version .small { font-size:10px; } .topbar .brand-wordmark { width:100px; } .system-grid{grid-template-columns:1fr;} .system-history .btn{width:100%;} }

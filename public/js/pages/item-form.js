@@ -1,7 +1,7 @@
-import { companyName } from '../state.js?v=0.4.7';
+import { companyName } from '../state.js?v=0.4.8';
 // Formulario de alta/edición de equipos (modal). Toda validación definitiva ocurre en el backend.
-import { get, post, put, api } from '../api.js?v=0.4.7';
-import { h, icon, modal, field, guarded, toast, resizeImage, MODE_LABEL } from '../ui.js?v=0.4.7';
+import { get, post, put, api } from '../api.js?v=0.4.8';
+import { h, icon, modal, field, guarded, toast, resizeImage, MODE_LABEL } from '../ui.js?v=0.4.8';
 
 export async function openItemForm({ item = null, onSaved }) {
   const catalog = await get('/api/categories');

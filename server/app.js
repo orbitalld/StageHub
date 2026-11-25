@@ -19,6 +19,7 @@ import { registerAuthRoutes } from './routes/auth.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
 import { registerItemRoutes } from './routes/items.js';
 import { registerCompanyRoutes } from './routes/companies.js';
+import { registerSystemRoutes } from './routes/system.js';
 import { registerDashboardRoutes } from './routes/dashboard.js';
 
 const SECURITY_HEADERS = {
@@ -57,6 +58,7 @@ export async function createApp(cfg) {
   registerDashboardRoutes(router, ctx);
   registerCompanyRoutes(router, ctx);
   registerMembershipRoutes(router,ctx);
+  registerSystemRoutes(router,ctx);
 
   const cookieBase = `Path=/; HttpOnly; SameSite=Lax${cfg.secureCookies ? '; Secure' : ''}`;
 

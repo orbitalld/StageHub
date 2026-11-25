@@ -1,23 +1,26 @@
-import { get, post } from './api.js?v=0.4.7';
-import { state, selectCompany, can } from './state.js?v=0.4.7';
-import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.7';
-import dashboardPage from './pages/dashboard.js?v=0.4.7';
-import inventoryPage from './pages/inventory.js?v=0.4.7';
-import itemPage from './pages/item.js?v=0.4.7';
-import categoriesPage from './pages/categories.js?v=0.4.7';
-import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.4.7';
-import usersPage from './pages/users.js?v=0.4.7';
-import { membersPage, requestsPage } from './pages/members.js?v=0.4.7';
+import { get, post } from './api.js?v=0.4.8';
+import { state, selectCompany, can } from './state.js?v=0.4.8';
+import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.8';
+import dashboardPage from './pages/dashboard.js?v=0.4.8';
+import inventoryPage from './pages/inventory.js?v=0.4.8';
+import itemPage from './pages/item.js?v=0.4.8';
+import categoriesPage from './pages/categories.js?v=0.4.8';
+import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.4.8';
+import usersPage from './pages/users.js?v=0.4.8';
+import { membersPage, requestsPage } from './pages/members.js?v=0.4.8';
+
+import systemPage, { versionIndicator } from './pages/system.js?v=0.4.8';
 
 const root = document.getElementById('app');
 
 function brand(compact = false) {
   return h('div', { class: 'brand' + (compact ? ' brand-compact' : '') },
-    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.4.7', alt: '', width: 44, height: 44 }),
-    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.4.7', alt: 'StageHub' }));
+    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.4.8', alt: '', width: 44, height: 44 }),
+    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.4.8', alt: 'StageHub' }));
 }
 
 const ROUTES = [
+  [/^#\/system$/, systemPage, 'system'],
   [/^#\/companies\/trash$/, trashPage, 'companies'],
   [/^#\/requests$/, requestsPage, 'requests'],
   [/^#\/companies\/(\d+)\/members$/, membersPage, 'companies'],
@@ -34,6 +37,7 @@ const NAV = [
   ['companies', 'Empresas', 'building', '#/companies'],
   ['requests', 'Solicitudes', 'user', '#/requests'],
   ['users', 'Administración de usuarios', 'lock', '#/users'],
+  ['system', 'Administración del sistema', 'lock', '#/system'],
   ['inventory', 'Inventario', 'package', '#/inventory'],
   ['categories', 'Categorías', 'tag', '#/categories'],
 ];
@@ -87,11 +91,11 @@ let shell, content, navLinks;
 
 async function renderShell() {
   try { state.companies = await get('/api/companies'); } catch(e){return renderFatal(e.message);}
-  if(!state.companies.length&&!['#/dashboard','#/companies','#/companies/trash','#/requests','#/users'].includes(location.hash))location.hash='#/dashboard';
+  if(!state.companies.length&&!['#/dashboard','#/companies','#/companies/trash','#/requests','#/users','#/system'].includes(location.hash))location.hash='#/dashboard';
   const stored=Number(sessionStorage.getItem('stagehub-company') || 1);
   state.companyId=state.companies.some(c=>c.id===stored)?stored:state.companies[0]?.id || 0;
   navLinks = {};
-  const nav = h('nav', { class: 'nav' }, NAV.filter(([key])=>(key!=='users'||can('users:write'))&&(!['inventory','categories'].includes(key)||state.companies.length>0)).map(([key, label, ic, href]) => {
+  const nav = h('nav', { class: 'nav' }, NAV.filter(([key])=>(!['users','system'].includes(key)||state.user.role==='master')&&(!['inventory','categories'].includes(key)||state.companies.length>0)).map(([key, label, ic, href]) => {
     const a = h('a', { href, onclick: () => shell.classList.remove('drawer') }, icon(ic), label);
     navLinks[key] = a;
     return a;
@@ -103,11 +107,11 @@ async function renderShell() {
       h('div', { class: 'side-foot stack', style: { gap: '8px' } },
         h('div', { style: { padding: '0 10px' } }, h('div', { style: { fontWeight: 550 } }, state.user.full_name), h('div', { class: 'muted small' }, state.user.role_label)),
         h('button', { class: 'btn ghost', onclick: changePasswordDialog }, icon('lock'), 'Cambiar contraseña'),
-        h('button', { class: 'btn ghost', onclick: logout }, icon('logout'), 'Cerrar sesión'))),
+        h('button', { class: 'btn ghost', onclick: logout }, icon('logout'), 'Cerrar sesión'), versionIndicator())),
     h('div', { class: 'main' },
       h('div', { class: 'topbar' },
         h('button', { class: 'icon-btn', 'aria-label': 'Menú', onclick: () => shell.classList.toggle('drawer') }, icon('menu')),
-        brand(true)),
+        brand(true), h('div',{class:'topbar-version'},versionIndicator())),
       state.companies.length?h('div', {class:'company-bar'}, h('label',{for:'company-select'},'Empresa activa'),
         h('select',{id:'company-select',value:String(state.companyId),onchange:e=>selectCompany(Number(e.target.value),location.hash==='#/dashboard/company'?'#/dashboard/company':'#/inventory')},state.companies.map(c=>h('option',{value:String(c.id)},c.name))),
         h('a',{class:'btn ghost',href:'#/companies'},icon('building'),'Empresas')):null,

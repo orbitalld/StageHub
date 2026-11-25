@@ -8,6 +8,14 @@ export function buildConfig(overrides = {}) {
   const dataDir = path.resolve(overrides.dataDir || process.env.DATA_DIR || path.join(root, 'data'));
   return {
     root,
+    renderKey: overrides.renderKey ?? process.env.RENDER_API_KEY ?? '',
+    renderServiceId: overrides.renderServiceId ?? process.env.RENDER_SERVICE_ID ?? '',
+    githubToken: overrides.githubToken ?? process.env.GITHUB_READ_TOKEN ?? '',
+    githubRepo: overrides.githubRepo ?? process.env.RENDER_GIT_REPO_SLUG ?? 'orbitalld/StageHub',
+    githubBranch: overrides.githubBranch ?? process.env.RENDER_GIT_BRANCH ?? 'main',
+    gitCommit: overrides.gitCommit ?? process.env.RENDER_GIT_COMMIT ?? '',
+    systemFetch: overrides.systemFetch ?? globalThis.fetch,
+
     databaseUrl: overrides.databaseUrl ?? process.env.DATABASE_URL ?? '',
     databaseCa: process.env.SUPABASE_DB_CA || '',
     pgNoTls: process.env.PG_NO_TLS === '1' && process.env.RENDER !== 'true',
