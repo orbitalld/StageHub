@@ -29,6 +29,19 @@ export function icon(name, size) {
   return s;
 }
 
+export const present = value => value != null && value !== false && !(typeof value === 'string' && (!value.trim() || /^(?:null|undefined)+$/i.test(value.trim())));
+export const joinText = (parts, separator = ' · ') => parts.filter(present).join(separator);
+export function appendSafe(el, ...kids) {
+  const nodes = kids.flat(Infinity).filter(k => present(k) || (typeof k === 'string' && k.trim() === '' && k.length > 0));
+  if (nodes.length) el.append(...nodes.map(k => k instanceof Node ? k : document.createTextNode(String(k))));
+  return el;
+}
+export function replaceSafe(el, ...kids) {
+  const nodes = kids.flat(Infinity).filter(present).map(k => k instanceof Node ? k : document.createTextNode(String(k)));
+  el.replaceChildren(...nodes);
+  return el;
+}
+
 export function h(tag, attrs, ...kids) {
   const el = document.createElement(tag);
   if (attrs && (typeof attrs !== 'object' || attrs instanceof Node || Array.isArray(attrs))) { kids.unshift(attrs); attrs = null; }
@@ -41,8 +54,9 @@ export function h(tag, attrs, ...kids) {
     else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
     else el.setAttribute(k, v === true ? '' : v);
   }
+  // Preserve intentional whitespace inside inline labels while ignoring absent values.
   for (const k of kids.flat(Infinity)) {
-    if (k == null || k === false) continue;
+    if (k == null || k === false || (typeof k === 'string' && /^(?:null|undefined)+$/i.test(k.trim()))) continue;
     el.append(k instanceof Node ? k : document.createTextNode(String(k)));
   }
   for (const [k, v] of deferred) el[k] = v; // después de crear <option> para que select.value funcione
@@ -80,6 +94,7 @@ export function toast(message, type = 'ok') {
 
 export function modal({ title, body, footer, wide = false }) {
   const previousFocus = document.activeElement;
+  const previousScroll = {left:window.scrollX,top:window.scrollY,behavior:'instant'};
   const onKey = (e) => { if (e.key === 'Escape' && overlay === [...document.querySelectorAll('.overlay')].at(-1)) close(); };
   const box = h('div', { class: `modal ${wide ? 'wide' : ''}`, role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
     h('header', {}, h('h3', {}, title), h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'Cerrar', onclick: () => close() }, icon('x'))),
@@ -105,7 +120,10 @@ export function modal({ title, body, footer, wide = false }) {
     document.removeEventListener('keydown', onKey);
     viewport?.removeEventListener('resize', syncViewport);
     viewport?.removeEventListener('scroll', syncViewport);
-    if (!document.querySelector('.overlay')) document.body.classList.remove('modal-open');
+    if (!document.querySelector('.overlay')) {
+      document.body.classList.remove('modal-open');
+      if (window.scrollX !== previousScroll.left || window.scrollY !== previousScroll.top) window.scrollTo(previousScroll);
+    }
     if (previousFocus?.isConnected && !mobile.matches) previousFocus.focus({ preventScroll: true });
   }
   // En móviles no abrir el teclado hasta que la persona toque un campo.

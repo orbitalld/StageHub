@@ -1,15 +1,15 @@
-import { get, post, put, del } from '../api.js?v=0.5.0';
-import { can, state, companyName, selectCompany } from '../state.js?v=0.5.0';
-import { h, icon, badge, field, modal, guarded, toast, confirmDialog, fmtNum, fmtMoney, fmtDate, fmtDateTime, MODE_LABEL, STOCK_STATUS, UNIT_STATUS, clear } from '../ui.js?v=0.5.0';
-import { openItemForm } from './item-form.js?v=0.5.0';
+import { get, post, put, del } from '../api.js?v=0.5.2';
+import { can, state, companyName, selectCompany } from '../state.js?v=0.5.2';
+import {appendSafe, replaceSafe,  h, icon, badge, field, modal, guarded, toast, confirmDialog, fmtNum, fmtMoney, fmtDate, fmtDateTime, MODE_LABEL, STOCK_STATUS, UNIT_STATUS, clear } from '../ui.js?v=0.5.2';
+import { openItemForm } from './item-form.js?v=0.5.2';
 
-import { copyItemInformation } from '../item-summary.js?v=0.5.0';
+import { copyItemInformation } from '../item-summary.js?v=0.5.2';
 
 export default async function itemPage(el, [idStr]) {
   const id = Number(idStr);
   const canWrite = can('inventory:write');
   const host = h('div', {});
-  el.append(host);
+  appendSafe(el,host);
   await refresh();
 
   async function refresh(item) {
@@ -22,7 +22,7 @@ export default async function itemPage(el, [idStr]) {
     const s = item.stock;
     const [stLabel, stKind] = STOCK_STATUS[s.status];
     const stat = (label, value, cls = '') => h('div', { class: `kpi ${cls}` }, h('div', { class: 'label' }, label), h('div', { class: 'value' }, fmtNum(value)));
-    clear(host).append(h('div', {},
+    replaceSafe(host,h('div', {},
       h('a', { href: '#/inventory', class: 'btn ghost', style: { marginBottom: '10px' } }, icon('back'), 'Inventario'),
       h('div', { class: 'card' }, h('div', { class: 'detail-head' },
         item.photo ? h('img', { class: 'detail-photo', src: `/uploads/${item.photo}`, alt: item.name }) : h('div', { class: 'detail-photo' }, icon('image', 28)),

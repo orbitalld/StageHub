@@ -16,3 +16,9 @@ export function selectCompany(id, page='#/inventory') {
   location.hash=page;
   location.reload();
 }
+
+// Refrescar los datos de la vista sin recargar el documento ni cambiar de empresa.
+export function refreshPage(hash = location.hash || '#/dashboard') {
+  if (hash !== (location.hash || '#/dashboard')) location.hash = hash;
+  else window.dispatchEvent(new Event('stagehub:refresh'));
+}

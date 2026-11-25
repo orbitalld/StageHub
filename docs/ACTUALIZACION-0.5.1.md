@@ -1,0 +1,7 @@
+# StageHub v0.5.1 — Selección múltiple de equipos
+
+- Eventos → Seleccionar / editar equipos: selecciona empresa (opcional), categoría y tipo de máquina (opcional). Marca varias referencias en la lista desplegable y ciérrala con «Listo · editar cantidades». Cambiar de filtro conserva la selección.
+- Ajusta las cantidades o unidades específicas de cada referencia en la lista acumulada, agrupada por categoría. El déficit se calcula con la disponibilidad del período del evento consultada al abrir el selector. «Guardar cambios» envía el lote completo; el servidor vuelve a comprobar permisos y datos, y guarda todo dentro de una sola transacción. Los borradores pueden tener déficit, pero confirmar el evento comprueba el stock nuevamente.
+- Los borradores existentes se cargan para editarlos. Quitar un borrador lo retira solo al guardar. Cancelar cierra el selector sin escribir. Solicitudes pendientes y reservas aprobadas no se sobrescriben; se administran con sus acciones específicas. Las solicitudes a otras empresas se envían solo al guardar el lote.
+- No hay nuevas migraciones ni variables de entorno. Actualizar los archivos del repositorio y desplegar el último commit. Se mantiene el esquema de datos de v0.5.0.
+- Pruebas locales con SQLite: 58 aprobadas, incluidas 3 nuevas pruebas de estado de selección, déficit por unidad específica, guardado transaccional, rollback, permisos y confirmación. No se ha verificado el flujo visual en un teléfono físico ni el despliegue contra PostgreSQL real.

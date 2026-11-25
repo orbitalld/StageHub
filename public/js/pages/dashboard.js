@@ -1,7 +1,7 @@
-import { companyName } from '../state.js?v=0.5.0';
-import { get } from '../api.js?v=0.5.0';
-import { h, icon, badge, fmtNum, fmtDateTime } from '../ui.js?v=0.5.0';
-import { donut, hbars, line } from '../charts.js?v=0.5.0';
+import { companyName } from '../state.js?v=0.5.2';
+import { get } from '../api.js?v=0.5.2';
+import {appendSafe,  h, icon, badge, fmtNum, fmtDateTime } from '../ui.js?v=0.5.2';
+import { donut, hbars, line } from '../charts.js?v=0.5.2';
 
 export default async function dashboardPage(el) {
   const d = await get('/api/dashboard');
@@ -11,7 +11,7 @@ export default async function dashboardPage(el) {
   const cats = d.by_category.filter((c) => c.total > 0);
   const empty = t.total === 0;
 
-  el.append(
+  appendSafe(el,
     h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Panel de control'), h('div', { class: 'sub' }, `Estado actual del inventario · ${companyName()}`)), h('div', { class: 'spacer' }),
       h('a', { class: 'btn', href: '#/dashboard' }, icon('back'), 'Todas las empresas'), h('a', { class: 'btn', href: '#/inventory' }, icon('package'), 'Ver inventario')),
     h('div', { class: 'grid kpis' },

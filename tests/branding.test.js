@@ -16,9 +16,9 @@ test('identidad e iconos web públicos: manifest válido, imágenes del tamaño 
     const res = await fetch(base + '/');
     assert.equal(res.status,200);
     const html = await res.text();
-    assert.match(html,/rel="manifest" href="\/manifest.webmanifest\?v=0\.5\.0"/);
+    assert.match(html,/rel="manifest" href="\/manifest.webmanifest\?v=0\.5\.2"/);
     assert.match(html,/rel="apple-touch-icon" sizes="180x180"/);
-    const response = await fetch(base + '/manifest.webmanifest?v=0.5.0');
+    const response = await fetch(base + '/manifest.webmanifest?v=0.5.2');
     assert.equal(response.status,200);
     assert.match(response.headers.get('content-type'),/application\/manifest\+json/);
     const manifest = await response.json();

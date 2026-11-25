@@ -1,20 +1,20 @@
-import { get, post, put, del } from '../api.js?v=0.5.0';
-import { can } from '../state.js?v=0.5.0';
-import { h, icon, badge, field, modal, guarded, toast, confirmDialog, MODE_LABEL, clear } from '../ui.js?v=0.5.0';
+import { get, post, put, del } from '../api.js?v=0.5.2';
+import { can } from '../state.js?v=0.5.2';
+import {appendSafe,  h, icon, badge, field, modal, guarded, toast, confirmDialog, MODE_LABEL, clear } from '../ui.js?v=0.5.2';
 
 export default async function categoriesPage(el) {
   const canWrite = can('categories:write');
   const host = h('div', { class: 'stack' });
-  el.append(
+  appendSafe(el,
     h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Categorías'), h('div', { class: 'sub' }, 'Catálogo compartido por todas las empresas · cantidades de referencias de la empresa activa')), h('div', { class: 'spacer' }),
       canWrite ? h('button', { class: 'btn primary', onclick: () => categoryDialog() }, icon('plus'), 'Nueva categoría') : null), host);
   await refresh();
 
   async function refresh() {
     const cats = await get('/api/categories');
-    clear(host);
-    if (!cats.length) host.append(h('div', { class: 'card empty' }, 'No hay categorías. Crea la primera para poder registrar equipos.'));
-    for (const c of cats) host.append(h('div', { class: 'card' },
+    const next = h('div', {class:'stack'});
+    if (!cats.length) appendSafe(next,h('div', { class: 'card empty' }, 'No hay categorías. Crea la primera para poder registrar equipos.'));
+    for (const c of cats) appendSafe(next,h('div', { class: 'card' },
       h('div', { class: 'row wrap', style: { marginBottom: '12px' } },
         h('span', { class: 'dot', style: { background: c.color, width: '12px', height: '12px' } }), h('h2', { style: { margin: 0, fontSize: '16px' } }, c.name),
         badge(`Por defecto: ${MODE_LABEL[c.tracking_mode]}`), h('span', { class: 'muted small' }, `${c.item_count} equipo(s)`), h('div', { class: 'spacer' }),
@@ -26,6 +26,7 @@ export default async function categoriesPage(el) {
         s.name, h('span', { class: 'muted small', style: { margin: '0 2px' } }, s.tracking_mode === 'individual' ? 'ind.' : 'cant.'),
         canWrite ? [h('button', { 'aria-label': `Editar ${s.name}`, onclick: () => subDialog(c, s) }, icon('edit', 13)), h('button', { 'aria-label': `Eliminar ${s.name}`, onclick: () => removeSub(s) }, icon('x', 13))] : null)))
         : h('p', { class: 'muted', style: { margin: 0 } }, 'Sin subcategorías.')));
+    host.replaceChildren(...next.childNodes);
   }
 
   function categoryDialog(c = null) {

@@ -1,9 +1,9 @@
-import { get, del } from '../api.js?v=0.5.0';
-import { can, state, companyName } from '../state.js?v=0.5.0';
-import { h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js?v=0.5.0';
-import { openItemForm } from './item-form.js?v=0.5.0';
+import { get, del } from '../api.js?v=0.5.2';
+import { can, state, companyName } from '../state.js?v=0.5.2';
+import {appendSafe, replaceSafe,  h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js?v=0.5.2';
+import { openItemForm } from './item-form.js?v=0.5.2';
 
-import { copyItemInformation } from '../item-summary.js?v=0.5.0';
+import { copyItemInformation } from '../item-summary.js?v=0.5.2';
 
 const SORTABLE = { name: 'Equipo', code: 'Código', category: 'Categoría', total: 'Total', available: 'Disp.' };
 
@@ -31,18 +31,21 @@ export default async function inventoryPage(el) {
   const statusSel = sel('status', [['', 'Todos los estados'], ['disponible', 'Con disponibles'], ['mantenimiento', 'Con unidades en mantenimiento'], ['fuera_de_servicio', 'Con unidades fuera de servicio'], ['bajo_stock', 'Stock insuficiente'], ['sin_stock', 'Sin existencias']]);
   const modeSel = sel('mode', [['', 'Ambas modalidades'], ['individual', 'Individual'], ['cantidad', 'Por cantidad']]);
 
-  el.append(
+  appendSafe(el,
     h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Inventario'), h('div', { class: 'sub' }, `Equipos y materiales · ${companyName()}`)), h('div', { class: 'spacer' }),
       canWrite ? h('button', { class: 'btn primary', onclick: () => openItemForm({ onSaved: (it) => { location.hash = `#/inventory/${it.id}`; } }) }, icon('plus'), 'Nuevo equipo') : null),
     h('div', { class: 'toolbar' }, h('div', { class: 'search' }, icon('search'), search), catSel, subSel, statusSel, modeSel),
     results);
 
+  let loadSequence = 0, hasData = false;
   async function load() {
+    const mine = ++loadSequence;
     sessionStorage.setItem(`inv-filters-${state.companyId}`, JSON.stringify(q));
     const params = new URLSearchParams(Object.entries(q).filter(([, v]) => v !== '' && v != null));
     let data;
-    try { data = await get(`/api/items?${params}`); } catch (e) { clear(results).append(h('div', { class: 'error-box' }, e.message)); return; }
-    render(data);
+    try { data = await get(`/api/items?${params}`); } catch (e) { if (mine !== loadSequence) return; if (!hasData) throw e; toast(e.message, 'error'); return; }
+    if (mine !== loadSequence) return;
+    render(data); hasData = true;
   }
 
   function sortHead(key) {
@@ -60,7 +63,7 @@ export default async function inventoryPage(el) {
   function render({ items, total, page, limit }) {
     const pages = Math.max(1, Math.ceil(total / limit));
     if (!items.length) {
-      clear(results).append(h('div', { class: 'card empty' }, h('h2', {}, total === 0 && !q.search && !q.category_id && !q.status && !q.mode ? 'Todavía no hay equipos' : 'Sin resultados'),
+      replaceSafe(results,h('div', { class: 'card empty' }, h('h2', {}, total === 0 && !q.search && !q.category_id && !q.status && !q.mode ? 'Todavía no hay equipos' : 'Sin resultados'),
         h('p', {}, 'Ajusta los filtros o registra un equipo nuevo.')));
       return;
     }
@@ -84,7 +87,7 @@ export default async function inventoryPage(el) {
           ] : null,
           h('button', { class: 'btn', type: 'button', title: 'Copiar información', 'aria-label': 'Copiar información', onclick: e => copyItemInformation(it.id, e.currentTarget) }, icon('copy'), 'Copiar información'))));
     });
-    clear(results).append(
+    replaceSafe(results,
       h('div', { class: 'table-wrap' }, h('table', { class: 'responsive' },
         h('thead', {}, h('tr', {}, sortHead('name'), sortHead('code'), sortHead('category'), h('th', {}, 'Modalidad'), sortHead('total'), sortHead('available'), h('th', {}, 'Estado'), h('th', {}))),
         h('tbody', {}, rows))),

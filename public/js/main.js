@@ -1,23 +1,24 @@
-import eventsPage, {eventPage,availabilityPage,eventPermissionsPage,eventTrashPage} from './pages/events.js?v=0.5.0';
-import { get, post } from './api.js?v=0.5.0';
-import { state, selectCompany, can } from './state.js?v=0.5.0';
-import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.5.0';
-import dashboardPage from './pages/dashboard.js?v=0.5.0';
-import inventoryPage from './pages/inventory.js?v=0.5.0';
-import itemPage from './pages/item.js?v=0.5.0';
-import categoriesPage from './pages/categories.js?v=0.5.0';
-import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.5.0';
-import usersPage from './pages/users.js?v=0.5.0';
-import { membersPage, requestsPage } from './pages/members.js?v=0.5.0';
+import {commitView} from './view-refresh.js?v=0.5.2';
+import eventsPage, {eventPage,availabilityPage,eventPermissionsPage,eventTrashPage} from './pages/events.js?v=0.5.2';
+import { get, post } from './api.js?v=0.5.2';
+import { state, selectCompany, can } from './state.js?v=0.5.2';
+import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.5.2';
+import dashboardPage from './pages/dashboard.js?v=0.5.2';
+import inventoryPage from './pages/inventory.js?v=0.5.2';
+import itemPage from './pages/item.js?v=0.5.2';
+import categoriesPage from './pages/categories.js?v=0.5.2';
+import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.5.2';
+import usersPage from './pages/users.js?v=0.5.2';
+import { membersPage, requestsPage } from './pages/members.js?v=0.5.2';
 
-import systemPage, { versionIndicator } from './pages/system.js?v=0.5.0';
+import systemPage, { versionIndicator } from './pages/system.js?v=0.5.2';
 
 const root = document.getElementById('app');
 
 function brand(compact = false) {
   return h('div', { class: 'brand' + (compact ? ' brand-compact' : '') },
-    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.5.0', alt: '', width: 44, height: 44 }),
-    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.5.0', alt: 'StageHub' }));
+    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.5.2', alt: '', width: 44, height: 44 }),
+    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.5.2', alt: 'StageHub' }));
 }
 
 const ROUTES = [
@@ -66,7 +67,7 @@ function renderFatal(msg) {
 }
 
 function renderAuth(mode, notice='', initialEmail='') {
-  content=null; navLinks=null;
+  renderToken++; content=null; navLinks=null; renderedHash=null; renderedCompany=null;
   const setup=mode==='setup', registering=mode==='register', verifying=mode==='verify';
   const err=h('div',{class:'error-box',hidden:true});
   const info=notice?h('p',{class:'muted',role:'status'},notice):null;
@@ -94,10 +95,14 @@ function renderAuth(mode, notice='', initialEmail='') {
 }
 
 let renderToken = 0;
-let shell, content, navLinks;
+let shell, content, navLinks, renderedHash, renderedCompany;
 
-async function renderShell() {
-  try { state.companies = await get('/api/companies'); } catch(e){return renderFatal(e.message);}
+async function renderShell({companies, preserve=false} = {}) {
+  const mine = ++renderToken;
+  const previousContent = content;
+  try { companies = companies ?? await get('/api/companies'); } catch(e){if(mine===renderToken)return renderFatal(e.message);return;}
+  if (mine !== renderToken || !state.user) return;
+  state.companies = companies;
   if(!state.companies.length&&!['#/dashboard','#/companies','#/companies/trash','#/requests','#/users','#/system','#/events'].includes(location.hash))location.hash='#/dashboard';
   const stored=Number(sessionStorage.getItem('stagehub-company') || 1);
   state.companyId=state.companies.some(c=>c.id===stored)?stored:state.companies[0]?.id || 0;
@@ -107,7 +112,10 @@ async function renderShell() {
     navLinks[key] = a;
     return a;
   }));
-  content = h('main', { class: 'content', id: 'content' });
+  const keep = preserve && previousContent && renderedCompany === state.companyId && renderedHash === (location.hash || '#/dashboard');
+  const previousScroll = keep ? {left:window.scrollX,top:window.scrollY,behavior:'instant'} : null;
+  content = keep ? previousContent : h('main', { class: 'content', id: 'content' });
+  if (!keep) { renderedHash = null; renderedCompany = null; }
   shell = h('div', { class: 'shell' },
     h('aside', { class: 'sidebar' },
       brand(), nav,
@@ -124,39 +132,55 @@ async function renderShell() {
         h('a',{class:'btn ghost',href:'#/companies'},icon('building'),'Empresas')):null,
       content),
     h('div', { class: 'scrim', onclick: () => shell.classList.remove('drawer') }));
-  clear(root).append(shell);
+  root.replaceChildren(shell);
+  if (previousScroll) window.scrollTo(previousScroll);
   route(true);
 }
 
 async function route(skipRefresh=false) {
   if (!state.user || !content || !navLinks) return;
-  if(skipRefresh!==true){
-    try{
-      const status=await get('/api/auth/status');
-      if(!status.user){state.user=null;return renderAuth('login');}
-      const companies=await get('/api/companies');
-      const changed=state.user.role!==status.user.role||state.user.full_name!==status.user.full_name||JSON.stringify(state.companies.map(c=>[c.id,c.member_role,c.name]))!==JSON.stringify(companies.map(c=>[c.id,c.member_role,c.name]));
-      state.user=status.user;
-      if(changed){state.companies=companies;return renderShell();}
-    }catch(e){toast(e.message,'error');}
-  }
+  const mine = ++renderToken;
   const hash = location.hash || '#/dashboard';
   const match = ROUTES.map(([re, page, nav]) => [re.exec(hash), page, nav]).find(([m]) => m);
   if (!match) { location.hash = '#/dashboard'; return; }
   const [m, page, nav] = match;
-  for (const [k, a] of Object.entries(navLinks)) a.classList.toggle('active', k === nav);
-  const mine = ++renderToken;
-  clear(content).append(h('p', { class: 'muted' }, 'Cargando…'));
-  const target = h('div', {});
+  const host = content;
+  const current = () => mine === renderToken && host === content && hash === (location.hash || '#/dashboard') && !!state.user;
+  const preserve = renderedHash === hash && renderedCompany === state.companyId;
+  host.setAttribute('aria-busy', 'true');
+  if (!preserve) {
+    renderedHash = null; renderedCompany = null;
+    host.replaceChildren(h('p', { class: 'muted page-loading', role: 'status' }, 'Cargando…'));
+  }
   try {
+    if (skipRefresh !== true) {
+      const [status, companies] = await Promise.all([get('/api/auth/status'), get('/api/companies')]);
+      if (!current()) return;
+      if (!status.user) { state.user = null; return renderAuth('login'); }
+      const sameUser = state.user.id === status.user.id && state.user.role === status.user.role;
+      const signature = rows => JSON.stringify(rows.map(c=>[c.id,c.member_role]).sort((a,b)=>a[0]-b[0]));
+      const sameAccess = sameUser && signature(state.companies) === signature(companies);
+      const changed = !sameAccess || state.user.full_name !== status.user.full_name || JSON.stringify(state.companies.map(c=>[c.id,c.name])) !== JSON.stringify(companies.map(c=>[c.id,c.name]));
+      state.user = status.user;
+      state.companies = companies;
+      if (changed) return renderShell({companies,preserve:preserve && sameAccess});
+    }
+    for (const [k, a] of Object.entries(navLinks)) a.classList.toggle('active', k === nav);
+    const target = h('div', {});
     await page(target, m.slice(1));
-    if (mine !== renderToken) return;
-    clear(content).append(target);
-    window.scrollTo(0, 0);
+    if (!current()) return;
+    commitView(host, target, preserve);
+    renderedHash = hash; renderedCompany = state.companyId;
   } catch (e) {
-    if (mine !== renderToken) return;
-    clear(content).append(h('div', { class: 'card empty' }, h('h2', {}, 'No se pudo cargar la página'), h('p', {}, e.message),
-      h('button', { class: 'btn', onclick: route }, 'Reintentar')));
+    if (!current()) return;
+    // No mantener una vista que el usuario ya no está autorizado a consultar.
+    if (preserve && ![401,403,404].includes(e.status)) toast('No se pudo actualizar: '+e.message, 'error');
+    else {
+      renderedHash = null; renderedCompany = null;
+      host.replaceChildren(h('div', { class: 'card empty' }, h('h2', {}, 'No se pudo cargar la página'), h('p', {}, e.message), h('button', { class: 'btn', onclick: () => route() }, 'Reintentar')));
+    }
+  } finally {
+    if (current()) host.removeAttribute('aria-busy');
   }
 }
 
@@ -183,6 +207,7 @@ function changePasswordDialog() {
     footer: [h('button', { class: 'btn', type: 'button', onclick: () => m.close() }, 'Cancelar'), save] });
 }
 
-window.addEventListener('hashchange', route);
+window.addEventListener('hashchange', () => route());
+window.addEventListener('stagehub:refresh', () => route());
 window.addEventListener('session-expired', () => { if (state.user) { state.user = null; toast('Tu sesión expiró. Inicia sesión de nuevo.', 'error'); renderAuth('login'); } });
 boot();

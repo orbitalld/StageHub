@@ -1,7 +1,7 @@
-import { get, put, post, del } from '../api.js?v=0.5.0';
-import { roleSelect, roles } from './members.js?v=0.5.0';
-import { can, state } from '../state.js?v=0.5.0';
-import { h, clear, badge, field, guarded, fmtDateTime, confirmDialog, modal } from '../ui.js?v=0.5.0';
+import { get, put, post, del } from '../api.js?v=0.5.2';
+import { roleSelect, roles } from './members.js?v=0.5.2';
+import { can, state } from '../state.js?v=0.5.2';
+import {appendSafe, replaceSafe,  h, clear, badge, field, guarded, fmtDateTime, confirmDialog, modal } from '../ui.js?v=0.5.2';
 
 const labels={user:'Usuario · Permisos por empresa',admin:'Administrador · Histórico (permisos por empresa)' ,master:'Master · Acceso completo'};
 export default async function usersPage(el){
@@ -12,12 +12,12 @@ export default async function usersPage(el){
   const counts=h('div',{class:'grid cols-2'});
   const list=h('div',{class:'grid cols-2'});
   const notice=h('p',{class:'muted small',role:'status','aria-live':'polite'});
-  el.append(h('div',{class:'page-head'},h('div',{},h('h1',{},'Administración de usuarios'),h('p',{class:'muted'},'Gestiona las solicitudes, el acceso y los tres roles de StageHub.'))),counts,h('div',{class:'card stack',style:{margin:'14px 0'}},search,filter),notice,list);
+  appendSafe(el,h('div',{class:'page-head'},h('div',{},h('h1',{},'Administración de usuarios'),h('p',{class:'muted'},'Gestiona las solicitudes, el acceso y los tres roles de StageHub.'))),counts,h('div',{class:'card stack',style:{margin:'14px 0'}},search,filter),notice,list);
   function draw(){
-    clear(counts).append(h('div',{class:'kpi'},h('div',{class:'label'},'Usuarios registrados'),h('div',{class:'value'},users.length)),h('div',{class:'kpi'},h('div',{class:'label'},'Solicitudes pendientes'),h('div',{class:'value'},users.filter(u=>u.approval_status==='pending').length)));
+    replaceSafe(counts,h('div',{class:'kpi'},h('div',{class:'label'},'Usuarios registrados'),h('div',{class:'value'},users.length)),h('div',{class:'kpi'},h('div',{class:'label'},'Solicitudes pendientes'),h('div',{class:'value'},users.filter(u=>u.approval_status==='pending').length)));
     const q=search.value.toLowerCase().trim();
     const rows=users.filter(u=>(filter.value==='all'||u.approval_status===filter.value||(filter.value==='active'&&u.active)||(filter.value==='disabled'&&u.approval_status==='approved'&&!u.active))&&`${u.full_name} ${u.email||''} ${u.username}`.toLowerCase().includes(q));
-    clear(list).append(...(rows.length?rows.map(card):[h('p',{class:'muted'},'No hay cuentas que coincidan.') ]));
+    replaceSafe(list,...(rows.length?rows.map(card):[h('p',{class:'muted'},'No hay cuentas que coincidan.') ]));
   }
   function card(u){
     const own=u.id===state.user.id;
@@ -49,7 +49,7 @@ export default async function usersPage(el){
   async function assign(u){
     const memberships=await get(`/api/users/${u.id}/companies`), companies=await get('/api/companies');
     const body=h('div',{class:'stack'},h('p',{class:'muted'},'Asigna una o varias empresas. Cada cambio se guarda individualmente.'));
-    for(const co of companies){const previous=memberships.find(m=>m.company_id===co.id);const select=h('select',{},h('option',{value:''},'Sin acceso'),...Object.entries(roles).filter(([r])=>r!=='master').map(([value,label])=>h('option',{value},label)));select.value=previous?.member_role||'';const err=h('div',{class:'error-box',hidden:true});let current=select.value;const save=h('button',{class:'btn primary',onclick:()=>guarded(save,err,async()=>{if(select.value===current)return;if(select.value)await put(`/api/companies/${co.id}/members/${u.id}`,{role:select.value});else if(current)await del(`/api/companies/${co.id}/members/${u.id}`);current=select.value;notice.textContent=`Acceso actualizado: ${u.full_name} · ${co.name}`;save.textContent='Guardado';})},'Guardar');select.addEventListener('change',()=>save.textContent='Guardar');body.append(h('section',{class:'card stack'},h('strong',{},co.name),select,err,save));}
+    for(const co of companies){const previous=memberships.find(m=>m.company_id===co.id);const select=h('select',{},h('option',{value:''},'Sin acceso'),...Object.entries(roles).filter(([r])=>r!=='master').map(([value,label])=>h('option',{value},label)));select.value=previous?.member_role||'';const err=h('div',{class:'error-box',hidden:true});let current=select.value;const save=h('button',{class:'btn primary',onclick:()=>guarded(save,err,async()=>{if(select.value===current)return;if(select.value)await put(`/api/companies/${co.id}/members/${u.id}`,{role:select.value});else if(current)await del(`/api/companies/${co.id}/members/${u.id}`);current=select.value;notice.textContent=`Acceso actualizado: ${u.full_name} · ${co.name}`;save.textContent='Guardado';})},'Guardar');select.addEventListener('change',()=>save.textContent='Guardar');appendSafe(body,h('section',{class:'card stack'},h('strong',{},co.name),select,err,save));}
     const m=modal({title:`Empresas de ${u.full_name}`,body,footer:[h('button',{class:'btn',onclick:()=>m.close()},'Cerrar')]});
   }
   draw();

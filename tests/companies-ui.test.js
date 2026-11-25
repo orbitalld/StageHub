@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import companiesPage from '../public/js/pages/companies.js?v=0.4.7';
-import { state } from '../public/js/state.js?v=0.4.7';
+import companiesPage from '../public/js/pages/companies.js?v=0.5.2';
+import { state } from '../public/js/state.js?v=0.5.2';
 
 // DOM mínimo: append convierte null/undefined en texto, igual que el navegador.
 class FakeNode {
