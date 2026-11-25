@@ -1,24 +1,24 @@
-import {commitView} from './view-refresh.js?v=0.5.2';
-import eventsPage, {eventPage,availabilityPage,eventPermissionsPage,eventTrashPage} from './pages/events.js?v=0.5.2';
-import { get, post } from './api.js?v=0.5.2';
-import { state, selectCompany, can } from './state.js?v=0.5.2';
-import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.5.2';
-import dashboardPage from './pages/dashboard.js?v=0.5.2';
-import inventoryPage from './pages/inventory.js?v=0.5.2';
-import itemPage from './pages/item.js?v=0.5.2';
-import categoriesPage from './pages/categories.js?v=0.5.2';
-import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.5.2';
-import usersPage from './pages/users.js?v=0.5.2';
-import { membersPage, requestsPage } from './pages/members.js?v=0.5.2';
+import {commitView} from './view-refresh.js?v=0.5.3';
+import eventsPage, {eventPage,availabilityPage,eventPermissionsPage,eventTrashPage} from './pages/events.js?v=0.5.3';
+import { get, post } from './api.js?v=0.5.3';
+import { state, selectCompany, can } from './state.js?v=0.5.3';
+import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.5.3';
+import dashboardPage from './pages/dashboard.js?v=0.5.3';
+import inventoryPage from './pages/inventory.js?v=0.5.3';
+import itemPage from './pages/item.js?v=0.5.3';
+import categoriesPage from './pages/categories.js?v=0.5.3';
+import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.5.3';
+import usersPage from './pages/users.js?v=0.5.3';
+import { membersPage, requestsPage } from './pages/members.js?v=0.5.3';
 
-import systemPage, { versionIndicator } from './pages/system.js?v=0.5.2';
+import systemPage, { versionIndicator } from './pages/system.js?v=0.5.3';
 
 const root = document.getElementById('app');
 
 function brand(compact = false) {
   return h('div', { class: 'brand' + (compact ? ' brand-compact' : '') },
-    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.5.2', alt: '', width: 44, height: 44 }),
-    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.5.2', alt: 'StageHub' }));
+    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.5.3', alt: '', width: 44, height: 44 }),
+    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.5.3', alt: 'StageHub' }));
 }
 
 const ROUTES = [

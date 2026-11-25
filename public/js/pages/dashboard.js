@@ -1,7 +1,7 @@
-import { companyName } from '../state.js?v=0.5.2';
-import { get } from '../api.js?v=0.5.2';
-import {appendSafe,  h, icon, badge, fmtNum, fmtDateTime } from '../ui.js?v=0.5.2';
-import { donut, hbars, line } from '../charts.js?v=0.5.2';
+import { companyName } from '../state.js?v=0.5.3';
+import { get } from '../api.js?v=0.5.3';
+import {appendSafe,  h, icon, badge, fmtNum, fmtDateTime } from '../ui.js?v=0.5.3';
+import { donut, hbars, line } from '../charts.js?v=0.5.3';
 
 export default async function dashboardPage(el) {
   const d = await get('/api/dashboard');

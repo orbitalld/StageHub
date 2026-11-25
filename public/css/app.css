@@ -279,3 +279,37 @@ body { height: auto; min-height: 100vh; }
 }
 .page-loading { padding: 10px 0; }
 @media (min-width: 861px) { html { scrollbar-gutter: stable; } }
+
+/* v0.5.3: selector táctil de una sola columna y sin scroll anidado. */
+.event-picker-modal .event-choice-list{min-width:0;grid-template-columns:minmax(0,1fr)}
+.event-picker-modal .event-choice input[type=checkbox]{appearance:auto;flex:0 0 22px;width:22px;height:22px;accent-color:var(--accent);margin:0}
+.event-picker-modal .event-choice{min-width:0;align-items:center;gap:14px;padding:13px}
+.event-picker-modal .event-choice:has(input:checked){border-color:var(--accent);background:#1c2740}
+.event-picker-modal .event-choice>span{flex:1;min-width:0;line-height:1.45}
+.event-picker-modal .event-picker-done{width:100%;justify-content:center;min-height:44px;white-space:normal}
+@media(max-width:860px){
+ .event-picker-modal .modal-body{padding:12px max(12px,env(safe-area-inset-right)) 24px max(12px,env(safe-area-inset-left))}
+ .event-picker-modal .event-fields{grid-template-columns:minmax(0,1fr);gap:12px;margin:4px 0}
+ .event-picker-modal .event-fields select{width:100%;min-height:48px;font-size:16px}
+ .event-picker-modal .event-picker-dropdown{padding:8px;overflow:visible}
+ .event-picker-modal .event-picker-dropdown>summary{min-height:48px;padding:12px 5px;line-height:1.4}
+ .event-picker-modal .event-choice-body{gap:12px;min-width:0}
+ .event-picker-modal .event-choice-list{max-height:none;overflow:visible;gap:9px;overscroll-behavior:auto}
+ .event-picker-modal .event-choice{min-height:76px;padding:12px 10px;gap:12px}
+ .event-picker-modal .event-choice>span{font-size:15px}
+ .event-picker-modal .event-choice .small{font-size:13px;line-height:1.4}
+ .event-picker-modal.event-picker-open .event-picker-selected{display:none}
+ .event-picker-modal .event-picker-group .field input{min-height:48px;font-size:16px}
+}
+.event-card [hidden]{display:none!important}
+@media print{
+ @page {size:A4;margin:20mm}
+ .event-print{padding:0!important}
+ .technical-report{font:11pt/1.45 Arial,sans-serif;color:#111;background:white;overflow-wrap:anywhere}
+ .technical-report h1{font-size:18pt;text-align:center;margin:0 0 6pt;break-after:avoid}
+ .technical-date{text-align:center;margin:0 0 16pt;break-after:avoid}
+ .technical-meta p,.technical-group p{margin:0 0 4pt;white-space:pre-wrap;break-inside:avoid}
+ .technical-group h2{font-size:12pt;margin:15pt 0 5pt;break-after:avoid}
+ .technical-equipment{padding-left:9pt}
+ .technical-warning{font-weight:bold}
+}

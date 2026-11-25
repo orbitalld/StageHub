@@ -1,6 +1,6 @@
-import { get, post } from '../api.js?v=0.5.2';
-import {appendSafe, replaceSafe,  h, clear, badge, confirmDialog, toast } from '../ui.js?v=0.5.2';
-import { state } from '../state.js?v=0.5.2';
+import { get, post } from '../api.js?v=0.5.3';
+import {appendSafe, replaceSafe,  h, clear, badge, confirmDialog, toast } from '../ui.js?v=0.5.3';
+import { state } from '../state.js?v=0.5.3';
 
 const short=sha=>sha?sha.slice(0,8):'No disponible';
 const date=v=>{if(!v)return '—';const d=new Date(v.includes('T')?v:v.replace(' ','T')+'Z');return Number.isNaN(d.valueOf())?'—':d.toLocaleString('es-CL');};
@@ -13,7 +13,7 @@ function versionLabel(v){
   return v.latest?`GitHub: v${v.latest}`:'Versión remota no disponible';
 }
 export function versionIndicator(){
-  const node=h('div',{class:'version-indicator',role:'status'},h('span',{class:'muted small'},'StageHub v0.5.2'));
+  const node=h('div',{class:'version-indicator',role:'status'},h('span',{class:'muted small'},'StageHub v0.5.3'));
   const update=()=>get('/api/system/version').then(v=>{if(!node.isConnected)return;replaceSafe(node,h('span',{class:'small'},`StageHub v${v.installed}`),h('span',{class:`small ${v.update_available?'version-new':'muted'}`},versionLabel(v)));if(state.user?.role==='master')appendSafe(node,h('a',{href:'#/system',class:'small'},'Administrar actualizaciones'));}).catch(()=>{});
   update();
   const timer=setInterval(()=>{if(!node.isConnected){clearInterval(timer);return;}if(document.visibilityState==='visible')update();},300000);
