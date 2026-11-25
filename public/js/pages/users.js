@@ -1,7 +1,7 @@
-import { get, put, post, del } from '../api.js?v=0.4.5';
-import { roleSelect, roles } from './members.js?v=0.4.5';
-import { can, state } from '../state.js?v=0.4.5';
-import { h, clear, badge, field, guarded, fmtDateTime, confirmDialog, modal } from '../ui.js?v=0.4.5';
+import { get, put, post, del } from '../api.js?v=0.4.6';
+import { roleSelect, roles } from './members.js?v=0.4.6';
+import { can, state } from '../state.js?v=0.4.6';
+import { h, clear, badge, field, guarded, fmtDateTime, confirmDialog, modal } from '../ui.js?v=0.4.6';
 
 const labels={user:'Usuario · Permisos por empresa',admin:'Administrador · Histórico (permisos por empresa)' ,master:'Master · Acceso completo'};
 export default async function usersPage(el){

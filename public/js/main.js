@@ -1,13 +1,13 @@
-import { get, post } from './api.js?v=0.4.5';
-import { state, selectCompany, can } from './state.js?v=0.4.5';
-import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.5';
-import dashboardPage from './pages/dashboard.js?v=0.4.5';
-import inventoryPage from './pages/inventory.js?v=0.4.5';
-import itemPage from './pages/item.js?v=0.4.5';
-import categoriesPage from './pages/categories.js?v=0.4.5';
-import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.4.5';
-import usersPage from './pages/users.js?v=0.4.5';
-import { membersPage, requestsPage } from './pages/members.js?v=0.4.5';
+import { get, post } from './api.js?v=0.4.6';
+import { state, selectCompany, can } from './state.js?v=0.4.6';
+import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.6';
+import dashboardPage from './pages/dashboard.js?v=0.4.6';
+import inventoryPage from './pages/inventory.js?v=0.4.6';
+import itemPage from './pages/item.js?v=0.4.6';
+import categoriesPage from './pages/categories.js?v=0.4.6';
+import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.4.6';
+import usersPage from './pages/users.js?v=0.4.6';
+import { membersPage, requestsPage } from './pages/members.js?v=0.4.6';
 
 const root = document.getElementById('app');
 

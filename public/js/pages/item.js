@@ -1,7 +1,9 @@
-import { get, post, put, del } from '../api.js?v=0.4.5';
-import { can, state, companyName, selectCompany } from '../state.js?v=0.4.5';
-import { h, icon, badge, field, modal, guarded, toast, confirmDialog, fmtNum, fmtMoney, fmtDate, fmtDateTime, MODE_LABEL, STOCK_STATUS, UNIT_STATUS, clear } from '../ui.js?v=0.4.5';
-import { openItemForm } from './item-form.js?v=0.4.5';
+import { get, post, put, del } from '../api.js?v=0.4.6';
+import { can, state, companyName, selectCompany } from '../state.js?v=0.4.6';
+import { h, icon, badge, field, modal, guarded, toast, confirmDialog, fmtNum, fmtMoney, fmtDate, fmtDateTime, MODE_LABEL, STOCK_STATUS, UNIT_STATUS, clear } from '../ui.js?v=0.4.6';
+import { openItemForm } from './item-form.js?v=0.4.6';
+
+import { copyItemInformation } from '../item-summary.js?v=0.4.6';
 
 export default async function itemPage(el, [idStr]) {
   const id = Number(idStr);
@@ -29,14 +31,15 @@ export default async function itemPage(el, [idStr]) {
           h('div', { class: 'row wrap', style: { marginTop: '8px' } }, h('span', { class: 'mono muted' }, item.internal_code),
             h('span', { class: 'row', style: { gap: '6px' } }, h('span', { class: 'dot', style: { background: item.category.color } }), item.subcategory ? `${item.category.name} › ${item.subcategory.name}` : item.category.name),
             badge(MODE_LABEL[item.tracking_mode], 'info'), badge(stLabel, stKind), item.low_stock ? badge(`Bajo el mínimo (${item.min_stock})`, 'warn') : null)),
-        canWrite ? h('div', { class: 'row' },
+        h('div', { class: 'row wrap' },
+          h('button', { class: 'btn', type: 'button', onclick: e => copyItemInformation(id, e.currentTarget) }, icon('copy'), 'Copiar información'),
+          canWrite ? [
           h('button', { class: 'btn', onclick: () => openItemForm({ item, onSaved: (it) => refresh(it) }) }, icon('edit'), 'Editar'),
-          h('button', { class: 'btn', onclick: async () => { try { const c = await post(`/api/items/${id}/duplicate`); toast('Equipo duplicado'); location.hash = `#/inventory/${c.id}`; } catch (e) { toast(e.message, 'error'); } } }, icon('copy'), 'Duplicar'),
           can('companies:write') && state.companies.length>1 ? h('button',{class:'btn',onclick:()=>transferDialog(item)},'Trasladar') : null,
           h('button', { class: 'btn danger', onclick: async () => {
             if (!(await confirmDialog({ title: 'Eliminar equipo', message: `¿Eliminar "${item.name}" y todas sus existencias? No se puede deshacer.`, confirmText: 'Eliminar', danger: true }))) return;
             try { await del(`/api/items/${id}`); toast('Equipo eliminado'); location.hash = '#/inventory'; } catch (e) { toast(e.message, 'error'); }
-          } }, icon('trash'), 'Eliminar')) : null)),
+          } }, icon('trash'), 'Eliminar')] : null))),
       h('div', { style: { height: '14px' } }),
       h('div', { class: 'grid kpis' }, stat('Total', s.total), stat('Disponibles', s.available, 'ok'), stat('En mantenimiento', s.maintenance, s.maintenance ? 'warn' : ''), stat('Fuera de servicio', s.out_of_service, s.out_of_service ? 'bad' : '')),
       h('div', { style: { height: '14px' } }),

@@ -1,6 +1,6 @@
 {
   "name": "stagehub",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "description": "StageHub: inventario t\u00e9cnico local o Supabase PostgreSQL",
   "private": true,
   "type": "module",

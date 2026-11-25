@@ -1,7 +1,9 @@
-import { get, post, del } from '../api.js?v=0.4.5';
-import { can, state, companyName } from '../state.js?v=0.4.5';
-import { h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js?v=0.4.5';
-import { openItemForm } from './item-form.js?v=0.4.5';
+import { get, del } from '../api.js?v=0.4.6';
+import { can, state, companyName } from '../state.js?v=0.4.6';
+import { h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js?v=0.4.6';
+import { openItemForm } from './item-form.js?v=0.4.6';
+
+import { copyItemInformation } from '../item-summary.js?v=0.4.6';
 
 const SORTABLE = { name: 'Equipo', code: 'Código', category: 'Categoría', total: 'Total', available: 'Disp.' };
 
@@ -54,9 +56,6 @@ export default async function inventoryPage(el) {
     if (!(await confirmDialog({ title: 'Eliminar equipo', message: `¿Eliminar "${item.name}" (${item.internal_code})? ${detail} Esta acción no se puede deshacer.`, confirmText: 'Eliminar', danger: true }))) return;
     try { await del(`/api/items/${item.id}`); toast('Equipo eliminado'); load(); } catch (e) { toast(e.message, 'error'); }
   }
-  async function duplicate(item) {
-    try { const c = await post(`/api/items/${item.id}/duplicate`); toast('Equipo duplicado (sin existencias)'); location.hash = `#/inventory/${c.id}`; } catch (e) { toast(e.message, 'error'); }
-  }
 
   function render({ items, total, page, limit }) {
     const pages = Math.max(1, Math.ceil(total / limit));
@@ -81,9 +80,9 @@ export default async function inventoryPage(el) {
         h('td', { class: 'actions-cell' }, h('div', { class: 'actions' },
           canWrite ? [
             h('button', { class: 'icon-btn', title: 'Editar', 'aria-label': 'Editar', onclick: async () => openItemForm({ item: await get(`/api/items/${it.id}`), onSaved: load }) }, icon('edit')),
-            h('button', { class: 'icon-btn', title: 'Duplicar', 'aria-label': 'Duplicar', onclick: () => duplicate(it) }, icon('copy')),
             h('button', { class: 'icon-btn danger', title: 'Eliminar', 'aria-label': 'Eliminar', onclick: () => remove(it) }, icon('trash')),
-          ] : null)));
+          ] : null,
+          h('button', { class: 'btn', type: 'button', title: 'Copiar información', 'aria-label': 'Copiar información', onclick: e => copyItemInformation(it.id, e.currentTarget) }, icon('copy'), 'Copiar información'))));
     });
     clear(results).append(
       h('div', { class: 'table-wrap' }, h('table', { class: 'responsive' },
