@@ -1,7 +1,7 @@
-import { get, post, put, api, del } from '../api.js?v=0.5.3';
-import { roles } from './members.js?v=0.5.3';
-import { can, state, selectCompany, refreshPage } from '../state.js?v=0.5.3';
-import {appendSafe,  h, icon, badge, field, modal, guarded, fmtNum, toast, confirmDialog } from '../ui.js?v=0.5.3';
+import { get, post, put, api, del } from '../api.js?v=0.5.5';
+import { roles } from './members.js?v=0.5.5';
+import { can, state, selectCompany, refreshPage } from '../state.js?v=0.5.5';
+import {appendSafe,  h, icon, badge, field, modal, guarded, fmtNum, toast, confirmDialog } from '../ui.js?v=0.5.5';
 
 export default async function companiesPage(el, _params, overview=false) {
   const companies=await get('/api/companies');
@@ -27,7 +27,7 @@ export default async function companiesPage(el, _params, overview=false) {
     const fallback=()=>icon('building',30);
     const frame=h('div',{class:'company-logo'},fallback());
     if(c.logo) {
-      const img=h('img',{src:`/uploads/${encodeURIComponent(c.logo)}`,alt:`Logo de ${c.name}`,onerror:()=>frame.replaceChildren(fallback())});
+      const img=h('img',{src:`/uploads/${encodeURIComponent(c.logo)}`,alt:`Logo de ${c.name}`,loading:'lazy',decoding:'async',onerror:()=>frame.replaceChildren(fallback())});
       frame.replaceChildren(img);
     }
     return frame;

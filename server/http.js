@@ -1,6 +1,7 @@
 // Utilidades HTTP mínimas: router, errores, cuerpo, cookies, archivos estáticos.
 import fs from 'node:fs';
 import path from 'node:path';
+import {gzipSync, brotliCompressSync, constants} from 'node:zlib';
 
 export class HttpError extends Error {
   constructor(status, message, details) {
@@ -75,18 +76,42 @@ const MIME = {
   '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon',
 };
 
+// Caché acotada de compresión: únicamente recursos públicos, nunca fotos ni API privada.
+const compressed = new Map();
+const encodings = header => String(header || '').toLowerCase().split(',').map(x=>{
+  const [name,...params]=x.trim().split(';');
+  const q=params.find(p=>p.trim().startsWith('q='));
+  return [name.trim(),q?Number(q.trim().slice(2)):1];
+});
+function chooseEncoding(header){
+  const entries=new Map(encodings(header));
+  const quality=name=>entries.get(name)??entries.get('*')??0;
+  const br=quality('br'),gz=quality('gzip');
+  return br>0&&br>=gz?'br':gz>0?'gzip':null;
+}
 /** Sirve un archivo con ETag. Devuelve false si no existe. */
-export function serveFile(req, res, file, { immutable = false } = {}) {
+export function serveFile(req, res, file, { publicAsset = false, versioned = false } = {}) {
   let st;
   try { st = fs.statSync(file); } catch { return false; }
   if (!st.isFile()) return false;
-  const etag = `W/"${st.size}-${Math.floor(st.mtimeMs)}"`;
+  const ext=path.extname(file).toLowerCase();
+  const compressible=publicAsset&&st.size>=512&&st.size<=1024*1024&&['.html','.js','.css','.json','.webmanifest','.svg'].includes(ext);
+  const encoding=compressible?chooseEncoding(req.headers['accept-encoding']):null;
+  const etag = `W/"${st.size}-${Math.floor(st.mtimeMs)}${encoding?'-'+encoding:''}"`;
   const headers = {
-    'Content-Type': MIME[path.extname(file).toLowerCase()] || 'application/octet-stream',
-    'Cache-Control': immutable ? 'private, max-age=86400' : 'no-cache',
+    'Content-Type': MIME[ext] || 'application/octet-stream',
+    'Cache-Control': !publicAsset?'private, no-store':versioned&&ext!=='.html'?'public, max-age=86400':'no-cache',
     ETag: etag,
   };
-  if (req.headers['if-none-match'] === etag) { res.writeHead(304, headers); res.end(); return true; }
+  if(compressible) headers.Vary='Accept-Encoding';
+  if(encoding) headers['Content-Encoding']=encoding;
+  if (publicAsset&&req.headers['if-none-match'] === etag) { res.writeHead(304, headers); res.end(); return true; }
+  if(encoding){
+    const key=file+'|'+etag;let data=compressed.get(key);
+    if(!data){const raw=fs.readFileSync(file);data=encoding==='br'?brotliCompressSync(raw,{params:{[constants.BROTLI_PARAM_QUALITY]:4}}):gzipSync(raw,{level:6});
+      if(compressed.size>=64)compressed.delete(compressed.keys().next().value);compressed.set(key,data);}
+    headers['Content-Length']=data.length;res.writeHead(200,headers);res.end(req.method==='HEAD'?undefined:data);return true;
+  }
   headers['Content-Length'] = st.size;
   res.writeHead(200, headers);
   if (req.method === 'HEAD') { res.end(); return true; }

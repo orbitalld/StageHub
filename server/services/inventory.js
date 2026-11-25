@@ -66,7 +66,7 @@ export async function listItems(db, q = {}) {
   const limit = Math.min(Math.max(parseInt(q.limit, 10) || 25, 1), 200);
   const page = Math.max(parseInt(q.page, 10) || 1, 1);
 
-  const total = (await db.prepare(`SELECT COUNT(*) AS n FROM items i JOIN v_item_stock v ON v.item_id = i.id ${W}`).get(...args)).n;
+  const total = (await db.prepare(`SELECT COUNT(*) AS n FROM items i ${statusSql?'JOIN v_item_stock v ON v.item_id = i.id':''} ${W}`).get(...args)).n;
   const rows = (await db.prepare(`${SELECT_ITEM} ${W} ORDER BY ${sortCol} ${dir}, i.id LIMIT ? OFFSET ?`)
     .all(...args, limit, (page - 1) * limit));
   return { items: rows.map(mapItem), total, page, limit };

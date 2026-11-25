@@ -1,9 +1,9 @@
-import { get, del } from '../api.js?v=0.5.3';
-import { can, state, companyName } from '../state.js?v=0.5.3';
-import {appendSafe, replaceSafe,  h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js?v=0.5.3';
-import { openItemForm } from './item-form.js?v=0.5.3';
+import { get, del } from '../api.js?v=0.5.5';
+import { can, state, companyName } from '../state.js?v=0.5.5';
+import {appendSafe, replaceSafe,  h, icon, badge, fmtNum, MODE_LABEL, STOCK_STATUS, toast, confirmDialog, debounce, clear } from '../ui.js?v=0.5.5';
+import { openItemForm } from './item-form.js?v=0.5.5';
 
-import { copyItemInformation } from '../item-summary.js?v=0.5.3';
+import { copyItemInformation } from '../item-summary.js?v=0.5.5';
 
 const SORTABLE = { name: 'Equipo', code: 'Código', category: 'Categoría', total: 'Total', available: 'Disp.' };
 
@@ -71,7 +71,7 @@ export default async function inventoryPage(el) {
       const [stLabel, stKind] = STOCK_STATUS[it.stock.status];
       return h('tr', { class: 'click', onclick: (e) => { if (!e.target.closest('button,a')) location.hash = `#/inventory/${it.id}`; } },
         h('td', { class: 'nolabel' }, h('div', { class: 'row' },
-          it.photo ? h('img', { class: 'thumb', src: `/uploads/${it.photo}`, alt: '', loading: 'lazy' }) : h('div', { class: 'thumb' }, icon('image')),
+          it.photo ? h('img', { class: 'thumb', src: `/uploads/${it.photo}`, alt: '', loading: 'lazy', decoding: 'async' }) : h('div', { class: 'thumb' }, icon('image')),
           h('div', {}, h('div', { class: 'item-name' }, it.name), h('div', { class: 'muted small' }, [it.brand, it.model].filter(Boolean).join(' · ') || '—')))),
         h('td', { 'data-label': 'Código' }, h('span', { class: 'mono' }, it.internal_code)),
         h('td', { 'data-label': 'Categoría' }, h('span', { class: 'row', style: { gap: '6px' } }, h('span', { class: 'dot', style: { background: it.category.color } }),

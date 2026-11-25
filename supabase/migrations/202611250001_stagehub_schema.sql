@@ -231,4 +231,9 @@ CREATE INDEX IF NOT EXISTS idx_event_pieces_line ON stagehub.event_pieces(line_i
 
 REVOKE ALL ON ALL TABLES IN SCHEMA stagehub FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA stagehub FROM PUBLIC, anon, authenticated;
+-- v0.5.4: índices aditivos, sin modificar datos.
+CREATE INDEX IF NOT EXISTS idx_items_company_category_name ON stagehub.items(company_id,category_id,name,id);
+CREATE INDEX IF NOT EXISTS idx_items_company_name ON stagehub.items(company_id,name,id);
+CREATE INDEX IF NOT EXISTS idx_items_photo ON stagehub.items(photo);
+CREATE INDEX IF NOT EXISTS idx_companies_logo ON stagehub.companies(logo);
 COMMIT;

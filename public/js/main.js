@@ -1,43 +1,36 @@
-import {commitView} from './view-refresh.js?v=0.5.3';
-import eventsPage, {eventPage,availabilityPage,eventPermissionsPage,eventTrashPage} from './pages/events.js?v=0.5.3';
-import { get, post } from './api.js?v=0.5.3';
-import { state, selectCompany, can } from './state.js?v=0.5.3';
-import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.5.3';
-import dashboardPage from './pages/dashboard.js?v=0.5.3';
-import inventoryPage from './pages/inventory.js?v=0.5.3';
-import itemPage from './pages/item.js?v=0.5.3';
-import categoriesPage from './pages/categories.js?v=0.5.3';
-import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.5.3';
-import usersPage from './pages/users.js?v=0.5.3';
-import { membersPage, requestsPage } from './pages/members.js?v=0.5.3';
+import {commitView} from './view-refresh.js?v=0.5.5';
+import { get, post } from './api.js?v=0.5.5';
+import { state, selectCompany, can } from './state.js?v=0.5.5';
+import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.5.5';
 
-import systemPage, { versionIndicator } from './pages/system.js?v=0.5.3';
+import { versionIndicator } from './version-indicator.js?v=0.5.5';
 
 const root = document.getElementById('app');
 
 function brand(compact = false) {
   return h('div', { class: 'brand' + (compact ? ' brand-compact' : '') },
-    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.5.3', alt: '', width: 44, height: 44 }),
-    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.5.3', alt: 'StageHub' }));
+    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.5.5', alt: '', width: 44, height: 44 }),
+    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.5.5', alt: 'StageHub' }));
 }
 
+const lazy = (load, name) => async (...args) => (await load())[name](...args);
 const ROUTES = [
-  [/^#\/events\/availability$/, availabilityPage, 'events'],
-  [/^#\/events\/trash$/, eventTrashPage, 'events'],
-  [/^#\/events\/permissions\/(\d+)$/, eventPermissionsPage, 'events'],
-  [/^#\/events\/(\d+)$/, eventPage, 'events'],
-  [/^#\/events$/, eventsPage, 'events'],
-  [/^#\/system$/, systemPage, 'system'],
-  [/^#\/companies\/trash$/, trashPage, 'companies'],
-  [/^#\/requests$/, requestsPage, 'requests'],
-  [/^#\/companies\/(\d+)\/members$/, membersPage, 'companies'],
-  [/^#\/companies$/, companiesPage, 'companies'],
-  [/^#\/dashboard$/, overviewPage, 'dashboard'],
-  [/^#\/dashboard\/company$/, dashboardPage, 'dashboard'],
-  [/^#\/users$/, usersPage, 'users'],
-  [/^#\/inventory$/, inventoryPage, 'inventory'],
-  [/^#\/inventory\/(\d+)$/, itemPage, 'inventory'],
-  [/^#\/categories$/, categoriesPage, 'categories'],
+  [/^#\/events\/availability$/, lazy(() => import('./pages/events.js?v=0.5.5'), 'availabilityPage'), 'events'],
+  [/^#\/events\/trash$/, lazy(() => import('./pages/events.js?v=0.5.5'), 'eventTrashPage'), 'events'],
+  [/^#\/events\/permissions\/(\d+)$/, lazy(() => import('./pages/events.js?v=0.5.5'), 'eventPermissionsPage'), 'events'],
+  [/^#\/events\/(\d+)$/, lazy(() => import('./pages/events.js?v=0.5.5'), 'eventPage'), 'events'],
+  [/^#\/events$/, lazy(() => import('./pages/events.js?v=0.5.5'), 'default'), 'events'],
+  [/^#\/system$/, lazy(() => import('./pages/system.js?v=0.5.5'), 'default'), 'system'],
+  [/^#\/companies\/trash$/, lazy(() => import('./pages/companies.js?v=0.5.5'), 'trashPage'), 'companies'],
+  [/^#\/requests$/, lazy(() => import('./pages/members.js?v=0.5.5'), 'requestsPage'), 'requests'],
+  [/^#\/companies\/(\d+)\/members$/, lazy(() => import('./pages/members.js?v=0.5.5'), 'membersPage'), 'companies'],
+  [/^#\/companies$/, lazy(() => import('./pages/companies.js?v=0.5.5'), 'default'), 'companies'],
+  [/^#\/dashboard$/, lazy(() => import('./pages/companies.js?v=0.5.5'), 'overviewPage'), 'dashboard'],
+  [/^#\/dashboard\/company$/, lazy(() => import('./pages/dashboard.js?v=0.5.5'), 'default'), 'dashboard'],
+  [/^#\/users$/, lazy(() => import('./pages/users.js?v=0.5.5'), 'default'), 'users'],
+  [/^#\/inventory$/, lazy(() => import('./pages/inventory.js?v=0.5.5'), 'default'), 'inventory'],
+  [/^#\/inventory\/(\d+)$/, lazy(() => import('./pages/item.js?v=0.5.5'), 'default'), 'inventory'],
+  [/^#\/categories$/, lazy(() => import('./pages/categories.js?v=0.5.5'), 'default'), 'categories'],
 ];
 const NAV = [
   ['dashboard', 'Panel principal', 'dashboard', '#/dashboard'],

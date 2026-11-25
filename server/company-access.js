@@ -12,9 +12,8 @@ export function canManageMember(actor,target){
 }
 
 export async function companyRole(db,user,id){
- if(!(await db.prepare('SELECT id FROM companies WHERE id=? AND deleted_at IS NULL').get(id)))return null;
- if(isMaster(user))return 'master';
- return (await db.prepare('SELECT member_role FROM company_members WHERE company_id=? AND user_id=?').get(id,user.id))?.member_role || null;
+ if(isMaster(user))return (await db.prepare('SELECT id FROM companies WHERE id=? AND deleted_at IS NULL').get(id))?'master':null;
+ return (await db.prepare('SELECT m.member_role FROM company_members m JOIN companies c ON c.id=m.company_id WHERE m.company_id=? AND m.user_id=? AND c.deleted_at IS NULL').get(id,user.id))?.member_role || null;
 }
 export function memberCan(role,perm){
  if(role==='master')return true;

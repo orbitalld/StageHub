@@ -22,9 +22,9 @@ export async function requireItemCompany(db, id, companyId, unit=false) {
 function fields(body){return [V.str(body,'name','El nombre',{required:true,max:150}),V.str(body,'rut','El RUT',{max:30}),V.str(body,'contact','El contacto',{max:150}),V.str(body,'notes','Las notas',{max:1000})];}
 export function registerCompanyRoutes(router,{db,cfg}) {
   const W={perm:'companies:write'};
-  router.add('GET','/api/companies',{},async c=>{const master=isMaster(c.user);const rows=await db.prepare(`SELECT c.*, (SELECT COUNT(*) FROM items i WHERE i.company_id=c.id) AS item_count,
+  router.add('GET','/api/companies',{},async c=>{const master=isMaster(c.user);const rows=await db.prepare(`SELECT c.*, ${master?"'master'":'m.member_role'} AS member_role, (SELECT COUNT(*) FROM items i WHERE i.company_id=c.id) AS item_count,
     (SELECT COALESCE(SUM(v.total),0) FROM items i JOIN v_item_stock v ON v.item_id=i.id WHERE i.company_id=c.id) AS total
-    FROM companies c ${master?'':'JOIN company_members m ON m.company_id=c.id AND m.user_id=?'} WHERE c.deleted_at IS NULL ORDER BY c.id`).all(...(master?[]:[c.user.id])); const visible=[]; for(const row of rows){const role=await companyRole(db,c.user,row.id);if(role)visible.push({...row,member_role:role});}return visible;});
+    FROM companies c ${master?'':'JOIN company_members m ON m.company_id=c.id AND m.user_id=?'} WHERE c.deleted_at IS NULL ORDER BY c.id`).all(...(master?[]:[c.user.id])); return rows;});
   // Papelera visible exclusivamente al Master global. Se mantienen todas las relaciones.
   router.add('GET','/api/companies/trash',W,async()=>await db.prepare(`SELECT c.id,c.name,c.deleted_at,u.full_name AS deleted_by_name,
     (SELECT COUNT(*) FROM items i WHERE i.company_id=c.id) AS item_count

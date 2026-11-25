@@ -126,7 +126,7 @@ export async function createApp(cfg) {
     }
     const file = path.normalize(path.join(cfg.publicDir, rel === '/' ? 'index.html' : rel));
     if (!file.startsWith(cfg.publicDir + path.sep)) throw new HttpError(403, 'Acceso denegado');
-    if (!serveFile(req, res, file)) throw new HttpError(404, 'Archivo no encontrado');
+    if (!serveFile(req, res, file, {publicAsset:true,versioned:/^\d+\.\d+\.\d+$/.test(url.searchParams.get('v')||'')})) throw new HttpError(404, 'Archivo no encontrado');
   }
 
   const server = http.createServer(async (req, res) => {

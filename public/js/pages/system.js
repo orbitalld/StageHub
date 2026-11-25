@@ -1,24 +1,12 @@
-import { get, post } from '../api.js?v=0.5.3';
-import {appendSafe, replaceSafe,  h, clear, badge, confirmDialog, toast } from '../ui.js?v=0.5.3';
-import { state } from '../state.js?v=0.5.3';
+import { get, post } from '../api.js?v=0.5.5';
+import {appendSafe, replaceSafe,  h, clear, badge, confirmDialog, toast } from '../ui.js?v=0.5.5';
+import { state } from '../state.js?v=0.5.5';
 
 const short=sha=>sha?sha.slice(0,8):'No disponible';
 const date=v=>{if(!v)return '—';const d=new Date(v.includes('T')?v:v.replace(' ','T')+'Z');return Number.isNaN(d.valueOf())?'—':d.toLocaleString('es-CL');};
 const labels={live:'En línea',deactivated:'Anterior',created:'Creado',queued:'En cola',build_in_progress:'Compilando',pre_deploy_in_progress:'Preparando',update_in_progress:'Desplegando',build_failed:'Error de compilación',update_failed:'Error de despliegue',pre_deploy_failed:'Error de preparación',canceled:'Cancelado',cancelled:'Cancelado'};
 const statusBadge=d=>badge(labels[d.status]||d.status||'Estado desconocido',d.status==='live'?'ok':d.status?.includes('failed')?'bad':d.status==='deactivated'?'':'warn');
-function versionLabel(v){
-  if(v.update_available&&v.latest)return `Nueva versión: v${v.latest}`;
-  if(v.unavailable||v.error)return 'No se pudo comprobar GitHub';
-  if(v.latest&&v.installed===v.latest)return `Última versión: v${v.latest}`;
-  return v.latest?`GitHub: v${v.latest}`:'Versión remota no disponible';
-}
-export function versionIndicator(){
-  const node=h('div',{class:'version-indicator',role:'status'},h('span',{class:'muted small'},'StageHub v0.5.3'));
-  const update=()=>get('/api/system/version').then(v=>{if(!node.isConnected)return;replaceSafe(node,h('span',{class:'small'},`StageHub v${v.installed}`),h('span',{class:`small ${v.update_available?'version-new':'muted'}`},versionLabel(v)));if(state.user?.role==='master')appendSafe(node,h('a',{href:'#/system',class:'small'},'Administrar actualizaciones'));}).catch(()=>{});
-  update();
-  const timer=setInterval(()=>{if(!node.isConnected){clearInterval(timer);return;}if(document.visibilityState==='visible')update();},300000);
-  return node;
-}
+import {versionLabel} from '../version-indicator.js?v=0.5.5';
 export default async function systemPage(root){
   if(state.user?.role!=='master')throw new Error('Solo el Master global puede administrar el sistema.');
   let busy=false;

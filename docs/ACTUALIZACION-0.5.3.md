@@ -1,0 +1,7 @@
+# StageHub 0.5.3 — Selector móvil y ficha técnica
+
+- Selector táctil de máquinas: filas de ancho completo, casillas de 22 px, controles más amplios, estado seleccionado visible. En móvil se elimina el scroll anidado de la lista y se oculta temporalmente el listado de cantidades al abrir el selector; «Listo · editar cantidades» arriba y abajo permite volver a editar. La selección y el botón general de guardado se conservan.
+- Ficha técnica: encabezado con nombre y fecha, horario, instalación, lugar, personal, responsable, fechas logísticas, estado, equipos por categoría y cantidades de dos dígitos, observaciones, disponibilidad y advertencias. Se omiten los datos opcionales ausentes; los estados de solicitud y los déficits se muestran. Se conserva la empresa de origen cuando difiere de la responsable. Fechas en la zona horaria del dispositivo, igual que los formularios.
+- Exportación Word (.docx) real, impresión/guardar PDF con estilo A4 y texto para copiar. Los demás informes y Excel conservan su estructura anterior. La ficha se genera por evento; no agrega zonas, escenarios ni tablas de distribución entre sedes inexistentes en los datos actuales.
+- Sin cambios de backend, migraciones, credenciales o dependencias. Actualizar el repositorio y desplegar; recargar el navegador para renovar recursos.
+- Pruebas locales: `npm test`. Verificar el selector en un teléfono físico y la impresión del navegador después de desplegar.

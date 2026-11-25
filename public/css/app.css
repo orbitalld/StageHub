@@ -313,3 +313,25 @@ body { height: auto; min-height: 100vh; }
  .technical-equipment{padding-left:9pt}
  .technical-warning{font-weight:bold}
 }
+
+/* v0.5.5: filas de selección con altura intrínseca; sin compresión de grid
+   ni scroll anidado en móviles, incluso con nombres de varias líneas. */
+.event-picker-modal .event-choice-body { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.event-picker-modal .event-choice-body > * { flex: 0 0 auto; min-width: 0; }
+.event-picker-modal .event-choice-list { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+.event-picker-modal .event-choice { display: flex; flex: 0 0 auto; height: auto; max-height: none; align-items: center; min-height: 82px; padding: 12px; gap: 12px; }
+.event-picker-modal .event-choice > .event-choice-info { display: flex; flex-direction: column; align-items: stretch; flex: 1 1 0%; height: auto; min-width: 0; gap: 4px; line-height: 1.4; }
+.event-picker-modal .event-choice-info > * { display: block; flex: 0 0 auto; height: auto; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+.event-picker-modal .event-choice-meta:empty { display: none; }
+.event-picker-modal .event-choice-stock { color: var(--text); }
+@media (max-width: 860px), (pointer: coarse) {
+  .event-picker-modal .event-choice-list { max-height: none; height: auto; overflow: visible; overscroll-behavior: auto; }
+  .event-picker-modal .event-choice { min-height: 92px; padding: 14px 12px; }
+  .event-picker-modal .event-choice-name { font-size: 15px; line-height: 1.35; }
+  .event-picker-modal .event-choice-meta, .event-picker-modal .event-choice-stock { font-size: 13px; line-height: 1.45; }
+  .event-picker-modal .event-choice input[type=checkbox] { flex: 0 0 24px; width: 24px; height: 24px; }
+  .event-picker-modal .event-picker-dropdown[open] ~ .event-picker-selected { display: none; }
+  .event-picker-modal .event-picker-body, .event-picker-modal .event-picker-body > .stack { display: flex; flex-direction: column; align-items: stretch; gap: 14px; }
+  .event-picker-modal .event-picker-body > *, .event-picker-modal .event-picker-body > .stack > * { flex: 0 0 auto; }
+  .event-picker-modal .modal-body { overflow-x: hidden; overflow-y: auto; }
+}
