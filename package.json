@@ -1,0 +1,22 @@
+{
+  "name": "stagehub",
+  "version": "0.2.0",
+  "description": "StageHub: inventario t\u00e9cnico local o Supabase PostgreSQL",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning server/index.js",
+    "dev": "node --env-file-if-exists=.env --watch --disable-warning=ExperimentalWarning server/index.js",
+    "test": "node --disable-warning=ExperimentalWarning --test \"tests/**/*.test.js\"",
+    "create-user": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning scripts/create-user.js",
+    "backup": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning scripts/backup.js",
+    "import-sqlite": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning scripts/import-sqlite.js",
+    "smoke": "node --env-file-if-exists=.env scripts/smoke.js"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}
