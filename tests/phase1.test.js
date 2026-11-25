@@ -38,7 +38,7 @@ test('primer arranque: requiere configuración y crea el administrador', async (
   assert.equal(r.status, 422);
   r = await call('admin', 'POST', '/api/auth/setup', { username: 'admin', full_name: 'Admin', password: 'clave-segura-1' });
   assert.equal(r.status, 201);
-  assert.equal(r.json.user.role, 'admin');
+  assert.equal(r.json.user.role, 'master');
   r = await call('x', 'POST', '/api/auth/setup', { username: 'otro', full_name: 'Otro', password: 'clave-segura-1' });
   assert.equal(r.status, 409, 'no se puede repetir la configuración inicial');
   // usuarios de otros roles para probar permisos

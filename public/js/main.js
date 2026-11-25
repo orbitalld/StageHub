@@ -1,24 +1,28 @@
 import { get, post } from './api.js';
-import { state, selectCompany } from './state.js';
+import { state, selectCompany, can } from './state.js';
 import { h, icon, clear, toast, modal, field, guarded } from './ui.js';
 import dashboardPage from './pages/dashboard.js';
 import inventoryPage from './pages/inventory.js';
 import itemPage from './pages/item.js';
 import categoriesPage from './pages/categories.js';
-import companiesPage from './pages/companies.js';
+import companiesPage, { overviewPage } from './pages/companies.js';
+import usersPage from './pages/users.js';
 
 const root = document.getElementById('app');
 
 const ROUTES = [
   [/^#\/companies$/, companiesPage, 'companies'],
-  [/^#\/dashboard$/, dashboardPage, 'dashboard'],
+  [/^#\/dashboard$/, overviewPage, 'dashboard'],
+  [/^#\/dashboard\/company$/, dashboardPage, 'dashboard'],
+  [/^#\/users$/, usersPage, 'users'],
   [/^#\/inventory$/, inventoryPage, 'inventory'],
   [/^#\/inventory\/(\d+)$/, itemPage, 'inventory'],
   [/^#\/categories$/, categoriesPage, 'categories'],
 ];
 const NAV = [
+  ['dashboard', 'Panel principal', 'dashboard', '#/dashboard'],
   ['companies', 'Empresas', 'building', '#/companies'],
-  ['dashboard', 'Panel de control', 'dashboard', '#/dashboard'],
+  ['users', 'Administración de usuarios', 'lock', '#/users'],
   ['inventory', 'Inventario', 'package', '#/inventory'],
   ['categories', 'Categorías', 'tag', '#/categories'],
 ];
@@ -39,34 +43,32 @@ function renderFatal(msg) {
     h('button', { class: 'btn primary', onclick: boot }, 'Reintentar'))));
 }
 
-function renderAuth(mode) {
+function renderAuth(mode, notice='', initialEmail='') {
   content=null; navLinks=null;
-  const setup = mode === 'setup';
-  const err = h('div', { class: 'error-box', hidden: true });
-  const user = h('input', { type: 'text', autocomplete: 'username', required: true, autocapitalize: 'none' });
-  const name = h('input', { type: 'text', autocomplete: 'name', required: true });
-  const pass = h('input', { type: 'password', autocomplete: setup ? 'new-password' : 'current-password', required: true });
-  const pass2 = h('input', { type: 'password', autocomplete: 'new-password', required: true });
-  const btn = h('button', { class: 'btn primary', type: 'submit', style: { justifyContent: 'center' } }, setup ? 'Crear administrador y entrar' : 'Entrar');
-  const form = h('form', { class: 'stack', onsubmit: (e) => {
-    e.preventDefault();
-    guarded(btn, err, async () => {
-      if (setup && pass.value !== pass2.value) throw new Error('Las contraseñas no coinciden');
-      const r = await post(setup ? '/api/auth/setup' : '/api/auth/login',
-        setup ? { username: user.value, full_name: name.value, password: pass.value } : { username: user.value, password: pass.value });
-      state.user = r.user;
-      location.hash = '#/dashboard';
-      renderShell();
-    });
-  } },
-  err, field('Usuario', user), setup ? field('Nombre completo', name) : null,
-  field('Contraseña', pass, setup ? 'Mínimo 8 caracteres.' : null), setup ? field('Repetir contraseña', pass2) : null, btn);
-  clear(root).append(h('div', { class: 'login-wrap' }, h('div', { class: 'card login-card stack' },
-    h('div', { class: 'brand', style: { padding: 0 } }, h('i', {}, 'S'), 'StageHub'),
-    h('div', {}, h('h1', {}, setup ? 'Configuración inicial' : 'Iniciar sesión'),
-      h('p', { class: 'muted', style: { margin: '4px 0 0' } }, setup ? 'Crea la cuenta del administrador del sistema.' : 'Inventario y producción técnica de eventos.')),
-    form)));
-  if (!window.matchMedia('(max-width: 860px), (pointer: coarse)').matches) user.focus();
+  const setup=mode==='setup', registering=mode==='register', verifying=mode==='verify';
+  const err=h('div',{class:'error-box',hidden:true});
+  const info=notice?h('p',{class:'muted',role:'status'},notice):null;
+  const user=h('input',{type:registering||verifying?'email':'text',autocomplete:registering||verifying?'email':'username',required:true,autocapitalize:'none',maxlength:254,value:initialEmail});
+  const name=h('input',{type:'text',autocomplete:'name',required:true,maxlength:100});
+  const pass=h('input',{type:'password',autocomplete:setup||registering?'new-password':'current-password',required:true,maxlength:200});
+  const pass2=h('input',{type:'password',autocomplete:'new-password',required:true});
+  const code=h('input',{type:'text',autocomplete:'one-time-code',autocapitalize:'none',required:true,maxlength:100});
+  const btn=h('button',{class:'btn primary',type:'submit',style:{justifyContent:'center'}},setup?'Crear Master y entrar':registering?'Registrarme':verifying?'Verificar correo':'Entrar');
+  const form=h('form',{class:'stack',onsubmit:e=>{e.preventDefault();guarded(btn,err,async()=>{
+    if((setup||registering)&&pass.value!==pass2.value)throw new Error('Las contraseñas no coinciden');
+    if(registering){const r=await post('/api/auth/register',{email:user.value,full_name:name.value,password:pass.value});return renderAuth(r.verification_required?'verify':'login',r.message,user.value);}
+    if(verifying){const r=await post('/api/auth/verify-email',{email:user.value,code:code.value});return renderAuth('login',r.message,user.value);}
+    const r=await post(setup?'/api/auth/setup':'/api/auth/login',setup?{username:user.value,full_name:name.value,password:pass.value}:{username:user.value,password:pass.value});
+    state.user=r.user;location.hash='#/dashboard';renderShell();
+  });}},err,info,field(setup?'Usuario':registering||verifying?'Correo electrónico':'Correo electrónico o usuario',user),setup||registering?field('Nombre completo',name):null,
+    verifying?field('Código recibido por correo',code):field('Contraseña',pass,setup||registering?'Mínimo 8 caracteres.':null),setup||registering?field('Repetir contraseña',pass2):null,btn);
+  const resend=h('button',{class:'btn',type:'button',onclick:()=>guarded(resend,err,async()=>{const r=await post('/api/auth/resend-email',{email:user.value});renderAuth('verify',r.message,user.value);})},'Reenviar código');
+  clear(root).append(h('div',{class:'login-wrap'},h('div',{class:'card login-card stack'},
+    h('div',{class:'brand',style:{padding:0}},h('i',{},'S'),'StageHub'),
+    h('div',{},h('h1',{},setup?'Configuración inicial':registering?'Crear cuenta':verifying?'Verificar correo':'Iniciar sesión'),h('p',{class:'muted',style:{margin:'4px 0 0'}},registering?'Las cuentas nuevas necesitan aprobación del Master.':'Inventario y producción técnica de eventos.')),form,
+    verifying?resend:null,
+    !setup?h('div',{class:'row wrap'},mode!=='login'?h('button',{class:'btn ghost',onclick:()=>renderAuth('login')},'Volver al inicio de sesión'):null,mode!=='register'?h('button',{class:'btn ghost',onclick:()=>renderAuth('register')},'Crear cuenta'):null,mode!=='verify'?h('button',{class:'btn ghost',onclick:()=>renderAuth('verify')},'Verificar correo'):null):null)));
+  if(!window.matchMedia('(max-width: 860px), (pointer: coarse)').matches)user.focus();
 }
 
 let renderToken = 0;
@@ -77,7 +79,7 @@ async function renderShell() {
   const stored=Number(sessionStorage.getItem('stagehub-company') || 1);
   state.companyId=state.companies.some(c=>c.id===stored)?stored:state.companies[0]?.id || 1;
   navLinks = {};
-  const nav = h('nav', { class: 'nav' }, NAV.map(([key, label, ic, href]) => {
+  const nav = h('nav', { class: 'nav' }, NAV.filter(([key])=>key!=='users'||can('users:write')).map(([key, label, ic, href]) => {
     const a = h('a', { href, onclick: () => shell.classList.remove('drawer') }, icon(ic), label);
     navLinks[key] = a;
     return a;
@@ -95,7 +97,7 @@ async function renderShell() {
         h('button', { class: 'icon-btn', 'aria-label': 'Menú', onclick: () => shell.classList.toggle('drawer') }, icon('menu')),
         h('div', { class: 'brand', style: { padding: 0 } }, h('i', {}, 'S'), 'StageHub')),
       h('div', {class:'company-bar'}, h('label',{for:'company-select'},'Empresa activa'),
-        h('select',{id:'company-select',value:String(state.companyId),onchange:e=>selectCompany(Number(e.target.value),location.hash==='#/dashboard'?'#/dashboard':'#/inventory')},state.companies.map(c=>h('option',{value:String(c.id)},c.name))),
+        h('select',{id:'company-select',value:String(state.companyId),onchange:e=>selectCompany(Number(e.target.value),location.hash==='#/dashboard/company'?'#/dashboard/company':'#/inventory')},state.companies.map(c=>h('option',{value:String(c.id)},c.name))),
         h('a',{class:'btn ghost',href:'#/companies'},icon('building'),'Empresas')),
       content),
     h('div', { class: 'scrim', onclick: () => shell.classList.remove('drawer') }));

@@ -68,7 +68,7 @@ Para crear otros usuarios ejecuta desde tu PC con `.env` configurada:
 npm run create-user -- bodega1 "Encargado de bodega" bodega
 ```
 
-Roles: `admin`, `bodega`, `supervisor`, `tecnico`, `consulta`. La administración web de usuarios no estaba en Fase 1. No pases contraseñas en argumentos de terminal. El comando solicita la contraseña; no la guarda en código.
+Roles efectivos desde v0.4: `master`, `admin`, `user`. La administración web está disponible para Master. Los aliases CLI históricos bodega, supervisor, tecnico y consulta siguen admitidos. No pases contraseñas en argumentos de terminal. El comando solicita la contraseña; no la guarda en código.
 
 ## Respaldos
 
@@ -97,3 +97,8 @@ Documentación oficial:
 - https://supabase.com/docs/guides/storage/quickstart
 - https://render.com/docs/web-services
 - https://render.com/docs/free
+
+
+## v0.4 — Empresas en inicio, registro y administración
+
+Consulta [la guía de actualización](docs/ACTUALIZACION_USUARIOS.md). Las cuentas anteriores mantienen sus contraseñas. El anterior administrador pasa a Master. El registro público crea solicitudes pendientes, nunca concede acceso por sí mismo. La verificación automática de correo es opcional mediante Resend; sin ella, el Master debe verificar el correo manualmente antes de aprobar.

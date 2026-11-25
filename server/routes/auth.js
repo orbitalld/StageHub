@@ -21,7 +21,7 @@ export function registerAuthRoutes(router, { db, cfg }) {
     if(cfg.databaseUrl) throw new HttpError(403,'El administrador inicial se configura en el servidor');
     const user = (await tx(db, async () => {
       if ((await countUsers(db)) > 0) throw new HttpError(409, 'El sistema ya fue configurado');
-      const u = (await createUser(db, { ...c.body, role: 'admin' }));
+      const u = (await createUser(db, { ...c.body, role: 'master' }));
       (await audit(db, u, 'crear', 'user', u.id, `Administrador inicial creado: ${u.username}`));
       return u;
     }));
@@ -31,17 +31,18 @@ export function registerAuthRoutes(router, { db, cfg }) {
   });
 
   router.add('POST', '/api/auth/login', { auth: false }, async (c) => {
-    const username = V.str(c.body, 'username', 'El usuario', { max: 40, required: true });
+    const username = V.str(c.body, 'username', 'El usuario', { max: 254, required: true });
     const password = typeof c.body.password === 'string' ? c.body.password : '';
     const key = `${c.ip}|${username.toLowerCase()}`;
     limiter.check(key);
-    const u = (await db.prepare('SELECT * FROM users WHERE username = ?').get(username));
-    const ok = verifyPassword(password, u ? u.password_hash : DUMMY_HASH) && u && u.active;
+    const u = await db.prepare('SELECT * FROM users WHERE lower(email) = lower(?) OR lower(username) = lower(?)').get(username,username);
+    const ok = password.length <= 200 && verifyPassword(password, u ? u.password_hash : DUMMY_HASH) && u;
     if (!ok) {
       limiter.fail(key);
       throw new HttpError(401, 'Usuario o contraseña incorrectos');
     }
     limiter.reset(key);
+    if (u.approval_status !== 'approved' || !u.active) throw new HttpError(403, u.approval_status==='pending' ? 'Tu cuenta está pendiente de aprobación del Master. Si recibiste un código, verifica primero tu correo.' : 'Cuenta desactivada. Contacta al Master.');
     (await startSession(c, u.id));
     (await db.prepare(`UPDATE users SET last_login_at = datetime('now') WHERE id = ?`).run(u.id));
     (await audit(db, u, 'login', 'user', u.id, `Inicio de sesión: ${u.username}`));

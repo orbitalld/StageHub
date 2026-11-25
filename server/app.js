@@ -8,10 +8,11 @@ import { audit } from './audit.js';
 import { checkStorage, getPhoto, photoType } from './storage.js';
 import { HttpError, createRouter, readBody, parseCookies, sendJson, serveFile } from './http.js';
 import { resolveSession } from './auth.js';
-import { can } from './permissions.js';
+import { can, effectiveRole } from './permissions.js';
 import { seedCatalog } from './seed.js';
 import { snapshotStock } from './services/inventory.js';
 import { PHOTO_RE } from './services/photos.js';
+import { registerUserRoutes } from './routes/users.js';
 import { registerAuthRoutes } from './routes/auth.js';
 import { registerCatalogRoutes } from './routes/catalog.js';
 import { registerItemRoutes } from './routes/items.js';
@@ -26,6 +27,7 @@ const SECURITY_HEADERS = {
 };
 
 export async function createApp(cfg) {
+  if(Boolean(cfg.mailKey)!==Boolean(cfg.mailFrom)) throw new Error('Configura RESEND_API_KEY y STAGEHUB_MAIL_FROM juntos, o ninguno.');
   for (const d of [cfg.dataDir, cfg.uploadsDir, cfg.backupsDir]) fs.mkdirSync(d, { recursive: true });
   if(process.env.RENDER==='true' && !cfg.databaseUrl) throw new Error('DATABASE_URL es obligatoria en Render; no se permite SQLite efímero.');
   if(cfg.databaseUrl) await checkStorage(cfg);
@@ -36,7 +38,7 @@ export async function createApp(cfg) {
       for (const co of await db.prepare('SELECT id FROM companies').all()) await snapshotStock(db,co.id);
       if(cfg.databaseUrl && await countUsers(db)===0){
         if(!cfg.adminPassword) throw new Error('Define ADMIN_PASSWORD para crear el primer administrador de forma segura.');
-        await tx(db,async()=>{const u=await createUser(db,{username:cfg.adminUsername,full_name:cfg.adminName,role:'admin',password:cfg.adminPassword}); await audit(db,u,'crear','user',u.id,'Administrador inicial creado desde configuración del servidor');});
+        await tx(db,async()=>{const u=await createUser(db,{username:cfg.adminUsername,full_name:cfg.adminName,role:'master',password:cfg.adminPassword}); await audit(db,u,'crear','user',u.id,'Administrador inicial creado desde configuración del servidor');});
       }
     });
   } catch(e){await db.close();throw e;}
@@ -47,6 +49,7 @@ export async function createApp(cfg) {
   const ctx = { db, cfg };
   const router = createRouter();
   registerAuthRoutes(router, ctx);
+  registerUserRoutes(router, ctx);
   registerCatalogRoutes(router, ctx);
   registerItemRoutes(router, ctx);
   registerDashboardRoutes(router, ctx);
@@ -71,7 +74,7 @@ export async function createApp(cfg) {
 
     if (route.opts.auth !== false) {
       if (!c.user) throw new HttpError(401, 'Debes iniciar sesión');
-      if (route.opts.perm && !can(c.user.role, route.opts.perm)) throw new HttpError(403, 'No tienes permiso para realizar esta acción');
+      if (route.opts.perm && !can(effectiveRole(c.user), route.opts.perm)) throw new HttpError(403, 'No tienes permiso para realizar esta acción');
     }
     // Defensa CSRF adicional a SameSite: toda escritura debe traer esta cabecera (los formularios de otros sitios no pueden enviarla).
     if (!['GET', 'HEAD'].includes(req.method) && req.headers['x-requested-with'] !== 'stagehub') {

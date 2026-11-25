@@ -18,6 +18,8 @@ export function buildConfig(overrides = {}) {
     adminUsername: process.env.ADMIN_USERNAME || 'admin',
     adminName: process.env.ADMIN_NAME || 'Administrador',
     adminPassword: process.env.ADMIN_PASSWORD || '',
+    mailKey: overrides.mailKey ?? process.env.RESEND_API_KEY ?? '',
+    mailFrom: overrides.mailFrom ?? process.env.STAGEHUB_MAIL_FROM ?? '',
 
     port: Number(overrides.port ?? process.env.PORT ?? 3000),
     host: overrides.host || process.env.HOST || '0.0.0.0',

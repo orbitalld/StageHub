@@ -223,3 +223,10 @@ input[type=file] { display: block; width: 100%; max-width: 100%; }
 .company-card {min-width:0;overflow-wrap:anywhere;}
 .company-card .btn {min-height:44px;white-space:normal;}
 @media(max-width:860px){.company-bar{padding:10px 12px;gap:8px;}.company-bar label{width:100%;}.company-bar select{max-width:none;min-height:44px;}.company-bar .btn{min-height:44px;}.company-card .row{flex-wrap:wrap;}}
+
+/* v0.4: tarjetas de cuentas y registros en móvil. */
+.user-card { min-width: 0; overflow-wrap: anywhere; }
+.user-card input[type=checkbox] { width: 20px; height: 20px; flex: 0 0 20px; }
+.user-card select { width: 100%; min-width: 0; }
+.login-card { max-width: 100%; }
+@media(max-width: 860px) { .user-card .btn { min-height: 44px; width: 100%; } .login-card .row { flex-wrap: wrap; } }

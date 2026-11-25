@@ -1,7 +1,7 @@
 // Contraseñas (scrypt), sesiones seguras y límite de intentos de login.
 import crypto from 'node:crypto';
 import { HttpError } from './http.js';
-import { ROLE_LABELS, permissionsOf } from './permissions.js';
+import { ROLE_LABELS, permissionsOf, effectiveRole } from './permissions.js';
 
 const KEYLEN = 64;
 const sha256 = (s) => crypto.createHash('sha256').update(s).digest('hex');
@@ -32,8 +32,8 @@ export function validatePassword(password) {
 
 export function publicUser(u) {
   return {
-    id: u.id, username: u.username, full_name: u.full_name, role: u.role,
-    role_label: ROLE_LABELS[u.role], permissions: permissionsOf(u.role),
+    id: u.id, username: u.username, full_name: u.full_name, role: effectiveRole(u), email: u.email ?? null,
+    role_label: ROLE_LABELS[effectiveRole(u)], permissions: permissionsOf(effectiveRole(u)),
   };
 }
 
@@ -52,7 +52,7 @@ export async function resolveSession(db, token, days) {
   const hash = sha256(token);
   const row = (await db.prepare(`SELECT s.last_seen_at, s.expires_at, u.* FROM sessions s JOIN users u ON u.id = s.user_id
                           WHERE s.token_hash = ?`).get(hash));
-  if (!row || !row.active) return null;
+  if (!row || !row.active || row.approval_status !== 'approved') return null;
   if (row.expires_at <= sqlTime(new Date())) {
     (await db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hash));
     return null;

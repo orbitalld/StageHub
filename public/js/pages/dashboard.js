@@ -13,7 +13,7 @@ export default async function dashboardPage(el) {
 
   el.append(
     h('div', { class: 'page-head' }, h('div', {}, h('h1', {}, 'Panel de control'), h('div', { class: 'sub' }, `Estado actual del inventario · ${companyName()}`)), h('div', { class: 'spacer' }),
-      h('a', { class: 'btn', href: '#/inventory' }, icon('package'), 'Ver inventario')),
+      h('a', { class: 'btn', href: '#/dashboard' }, icon('back'), 'Todas las empresas'), h('a', { class: 'btn', href: '#/inventory' }, icon('package'), 'Ver inventario')),
     h('div', { class: 'grid kpis' },
       kpi('Equipos registrados', t.total), kpi('Disponibles', t.available, 'ok'),
       kpi('En mantenimiento', t.maintenance, t.maintenance ? 'warn' : ''), kpi('Fuera de servicio', t.out_of_service, t.out_of_service ? 'bad' : ''),

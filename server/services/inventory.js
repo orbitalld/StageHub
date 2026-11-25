@@ -342,7 +342,7 @@ export async function updateUnit(ctx, user, unitId, body) {
       .run(serial, status, location, notes, number, statusNote, unitId));
     if (statusChanged) {
       (await db.prepare(`UPDATE units SET status_changed_at = ?, status_changed_by = ? WHERE id = ?`)
-        .run(status === 'disponible' ? null : new Date().toISOString().slice(0, 19).replace('T', ' '), status === 'disponible' ? null : user.username, unitId));
+        .run(status === 'disponible' ? null : new Date().toISOString().slice(0, 19).replace('T', ' '), status === 'disponible' ? null : (user.email ? user.full_name : user.username), unitId));
     }
     const label = `Unidad N.º ${number ?? '—'} (${unit.unit_code})`;
     let summary = `${label} editada`;

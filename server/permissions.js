@@ -1,22 +1,10 @@
-// Matriz de permisos por rol. Se amplía en cada fase sin tocar las rutas existentes.
-export const ROLE_LABELS = {
-  admin: 'Administrador',
-  bodega: 'Encargado de bodega',
-  supervisor: 'Supervisor',
-  tecnico: 'Técnico',
-  consulta: 'Usuario de consulta',
-};
-
+export const ROLE_LABELS = { user: 'Usuario', admin: 'Administrador', master: 'Master' };
+export const legacyRole = role => ({master:'admin',admin:'bodega',user:'consulta'})[role];
+export const effectiveRole = u => u.access_role || ({admin:'master',bodega:'admin',supervisor:'user',tecnico:'user',consulta:'user'})[u.role] || 'user';
 const PERMISSIONS = {
-  admin: ['*'],
-  bodega: ['inventory:read', 'inventory:write', 'categories:write', 'audit:read'],
-  supervisor: ['inventory:read', 'audit:read'],
-  tecnico: ['inventory:read'],
-  consulta: ['inventory:read'],
+  master: ['*'],
+  admin: ['inventory:read','inventory:write','categories:write','audit:read'],
+  user: ['inventory:read'],
 };
-
-export const permissionsOf = (role) => PERMISSIONS[role] || [];
-export const can = (role, perm) => {
-  const p = permissionsOf(role);
-  return p.includes('*') || p.includes(perm);
-};
+export const permissionsOf = role => PERMISSIONS[role] || [];
+export const can = (role,perm) => permissionsOf(role).includes('*') || permissionsOf(role).includes(perm);

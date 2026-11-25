@@ -6,7 +6,7 @@ let cookie='',id,photo;
 async function call(method,url,body,raw){const headers={'X-Requested-With':'stagehub',...(cookie?{Cookie:cookie}:{}),...(raw?{'Content-Type':'image/png'}:body?{'Content-Type':'application/json'}:{})};const res=await fetch(base+url,{method,headers,body:raw|| (body?JSON.stringify(body):undefined),signal:AbortSignal.timeout(90000)});const s=res.headers.get('set-cookie');if(s)cookie=s.split(';')[0];const text=await res.text();assert.ok(res.ok,`${method} ${url}: HTTP ${res.status}: ${text.slice(0,200)}`);return text?JSON.parse(text):null;}
 try{
  const st=await call('GET','/api/auth/status');assert.equal(st.setup_required,false);
- const login=await call('POST','/api/auth/login',{username,password});assert.equal(login.user.role,'admin');
+ const login=await call('POST','/api/auth/login',{username,password});assert.equal(login.user.role,'master');
  const cats=await call('GET','/api/categories');assert.ok(cats.length);
  const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jSioAAAAASUVORK5CYII=','base64');
  photo=(await call('POST','/api/uploads/photo',undefined,png)).photo;

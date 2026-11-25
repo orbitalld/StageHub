@@ -100,3 +100,5 @@ pico_reservado = máximo, en cada instante de la ventana, de la suma de reservas
 3. Fase 3: despacho, devoluciones, movimientos, QR y etiquetas.
 4. Fase 4: mantenimiento, usuarios y permisos (pantalla), reportes y exportaciones.
 5. Fase 5: PWA, optimización móvil, respaldos desde la interfaz, pruebas generales.
+
+> Actualización v0.4: los roles efectivos y el registro se documentan en ACTUALIZACION_USUARIOS.md; los permisos históricos de esta guía ya no aplican.

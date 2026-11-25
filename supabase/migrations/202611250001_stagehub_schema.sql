@@ -161,6 +161,16 @@ CREATE TABLE IF NOT EXISTS stagehub.company_stock_snapshots (
 );
 INSERT INTO stagehub.company_stock_snapshots(company_id,day,total,available,maintenance,out_of_service)
 SELECT 1,day,total,available,maintenance,out_of_service FROM stagehub.stock_snapshots ON CONFLICT(company_id,day) DO NOTHING;
+-- v0.4: roles efectivos, registro y aprobación. Conserva la columna histórica role.
+ALTER TABLE stagehub.users ADD COLUMN IF NOT EXISTS access_role text CHECK (access_role IN ('user','admin','master'));
+ALTER TABLE stagehub.users ADD COLUMN IF NOT EXISTS email text;
+ALTER TABLE stagehub.users ADD COLUMN IF NOT EXISTS email_verified_at timestamptz;
+ALTER TABLE stagehub.users ADD COLUMN IF NOT EXISTS verification_hash text;
+ALTER TABLE stagehub.users ADD COLUMN IF NOT EXISTS verification_expires_at timestamptz;
+ALTER TABLE stagehub.users ADD COLUMN IF NOT EXISTS approval_status text NOT NULL DEFAULT 'approved' CHECK (approval_status IN ('pending','approved','rejected'));
+ALTER TABLE stagehub.users ADD COLUMN IF NOT EXISTS verification_required integer NOT NULL DEFAULT 0 CHECK (verification_required IN (0,1));
+UPDATE stagehub.users SET access_role=CASE role WHEN 'admin' THEN 'master' WHEN 'bodega' THEN 'admin' ELSE 'user' END WHERE access_role IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_ci ON stagehub.users(lower(email));
 REVOKE ALL ON ALL TABLES IN SCHEMA stagehub FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA stagehub FROM PUBLIC, anon, authenticated;
 COMMIT;

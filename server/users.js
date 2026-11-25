@@ -1,7 +1,7 @@
 import { HttpError } from './http.js';
 import { V } from './validate.js';
 import { hashPassword, validatePassword } from './auth.js';
-import { ROLE_LABELS } from './permissions.js';
+import { ROLE_LABELS, legacyRole } from './permissions.js';
 
 export async function countUsers(db) {
   return (await db.prepare('SELECT COUNT(*) AS n FROM users').get()).n;
@@ -13,12 +13,12 @@ export async function createUser(db, input) {
     V.fail('username', 'El usuario debe tener 3-40 caracteres (letras, números, punto, guion)');
   }
   const full_name = V.str(input, 'full_name', 'El nombre', { max: 100, required: true });
-  const role = V.oneOf(input, 'role', 'El rol', Object.keys(ROLE_LABELS));
+  const role = V.oneOf({...input,role:({bodega:'admin',supervisor:'user',tecnico:'user',consulta:'user'})[input.role] || input.role}, 'role', 'El rol', Object.keys(ROLE_LABELS));
   validatePassword(input.password);
   if ((await db.prepare('SELECT 1 FROM users WHERE username = ?').get(username))) {
     throw new HttpError(409, 'Ya existe un usuario con ese nombre', { field: 'username' });
   }
-  const r = (await db.prepare('INSERT INTO users(username, full_name, password_hash, role) VALUES (?,?,?,?)')
-    .run(username, full_name, hashPassword(input.password), role));
+  const r = (await db.prepare('INSERT INTO users(username, full_name, password_hash, role, access_role) VALUES (?,?,?,?,?)')
+    .run(username, full_name, hashPassword(input.password), legacyRole(role), role));
   return (await db.prepare('SELECT * FROM users WHERE id = ?').get(Number(r.lastInsertRowid)));
 }
