@@ -1,7 +1,7 @@
-import { get, post, put, api, del } from '../api.js?v=0.4.8';
-import { roles } from './members.js?v=0.4.8';
-import { can, state, selectCompany } from '../state.js?v=0.4.8';
-import { h, icon, badge, field, modal, guarded, fmtNum, toast, confirmDialog } from '../ui.js?v=0.4.8';
+import { get, post, put, api, del } from '../api.js?v=0.5.0';
+import { roles } from './members.js?v=0.5.0';
+import { can, state, selectCompany } from '../state.js?v=0.5.0';
+import { h, icon, badge, field, modal, guarded, fmtNum, toast, confirmDialog } from '../ui.js?v=0.5.0';
 
 export default async function companiesPage(el, _params, overview=false) {
   const companies=await get('/api/companies');

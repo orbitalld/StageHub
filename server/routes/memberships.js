@@ -18,7 +18,7 @@ export function registerMembershipRoutes(router,{db}){
   if(old&&!allowed(actor,old.member_role))throw new HttpError(403,'No puedes modificar este miembro');
   if(uid===c.user.id)throw new HttpError(409,'No puedes cambiar tu propio permiso');
   const u=await db.prepare('SELECT id,active,approval_status FROM users WHERE id=?').get(uid);if(!u||!u.active||u.approval_status!=='approved')throw new HttpError(422,'La cuenta debe estar activa y aprobada');
-  await write(co,uid,role);await db.prepare("UPDATE company_invitations SET status='cancelled' WHERE company_id=? AND recipient_id=? AND status='pending'").run(co,uid);await auditMember(c,co,uid,'Permiso de empresa actualizado');return {ok:true};
+  if(old&&old.member_role!==role)await db.prepare('DELETE FROM event_permissions WHERE company_id=? AND user_id=?').run(co,uid);await write(co,uid,role);await db.prepare("UPDATE company_invitations SET status='cancelled' WHERE company_id=? AND recipient_id=? AND status='pending'").run(co,uid);await auditMember(c,co,uid,'Permiso de empresa actualizado');return {ok:true};
  }));
  router.add('DELETE','/api/companies/:id/members/:uid',{},async c=>tx(db,async()=>{
   const co=idOf(c.params.id),uid=idOf(c.params.uid);const actor=await requireCompany(db,c.user,co,'members:write');const old=await member(co,uid);

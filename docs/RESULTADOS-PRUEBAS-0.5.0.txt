@@ -1,0 +1,344 @@
+
+> stagehub@0.5.0 test
+> node --disable-warning=ExperimentalWarning --test "tests/**/*.test.js"
+
+TAP version 13
+# Subtest: identidad e iconos web públicos: manifest válido, imágenes del tamaño declarado y API aún privada
+ok 1 - identidad e iconos web públicos: manifest válido, imágenes del tamaño declarado y API aún privada
+  ---
+  duration_ms: 3064.365518
+  type: 'test'
+  ...
+# Subtest: Empresas y dashboard no muestran null ni datos opcionales vacíos
+ok 2 - Empresas y dashboard no muestran null ni datos opcionales vacíos
+  ---
+  duration_ms: 23.491205
+  type: 'test'
+  ...
+# Subtest: migración de inventario previo asigna empresas sin perder equipos, unidades, historial o evolución
+ok 3 - migración de inventario previo asigna empresas sin perder equipos, unidades, historial o evolución
+  ---
+  duration_ms: 13.252826
+  type: 'test'
+  ...
+# Subtest: API de empresas: separación, permisos, inventario, unidades, historial, traslado y persistencia
+ok 4 - API de empresas: separación, permisos, inventario, unidades, historial, traslado y persistencia
+  ---
+  duration_ms: 255.825429
+  type: 'test'
+  ...
+# Subtest: PostgreSQL devuelve ID de empresa y compila snapshot compuesto
+ok 5 - PostgreSQL devuelve ID de empresa y compila snapshot compuesto
+  ---
+  duration_ms: 0.96277
+  type: 'test'
+  ...
+# Subtest: Reservas concurrentes, stock operativo, conflictos y cancelación de borradores
+ok 6 - Reservas concurrentes, stock operativo, conflictos y cancelación de borradores
+  ---
+  duration_ms: 144.288827
+  type: 'test'
+  ...
+# Subtest: Reservas no solapadas reutilizan stock; cálculo por pico no suma períodos distintos
+ok 7 - Reservas no solapadas reutilizan stock; cálculo por pico no suma períodos distintos
+  ---
+  duration_ms: 81.871423
+  type: 'test'
+  ...
+# Subtest: Unidades específicas, devolución dañada, cancelación en terreno y recuperación persistente
+ok 8 - Unidades específicas, devolución dañada, cancelación en terreno y recuperación persistente
+  ---
+  duration_ms: 109.158619
+  type: 'test'
+  ...
+# Subtest: Aislamiento de empresas, permisos delegados, solicitud parcial y revocación
+ok 9 - Aislamiento de empresas, permisos delegados, solicitud parcial y revocación
+  ---
+  duration_ms: 363.046031
+  type: 'test'
+  ...
+# Subtest: Intervalos contiguos no se solapan, PostgreSQL parametrizado y exportación XLSX real
+ok 10 - Intervalos contiguos no se solapan, PostgreSQL parametrizado y exportación XLSX real
+  ---
+  duration_ms: 2.554154
+  type: 'test'
+  ...
+# Subtest: ficha individual incluye números y notas de estado, sin tokens QR
+ok 11 - ficha individual incluye números y notas de estado, sin tokens QR
+  ---
+  duration_ms: 1.122998
+  type: 'test'
+  ...
+# Subtest: ficha por cantidad no inventa numeración y muestra las notas grupales
+ok 12 - ficha por cantidad no inventa numeración y muestra las notas grupales
+  ---
+  duration_ms: 0.268138
+  type: 'test'
+  ...
+# Subtest: ficha oculta datos opcionales vacíos y distingue una nota de estado no registrada
+ok 13 - ficha oculta datos opcionales vacíos y distingue una nota de estado no registrada
+  ---
+  duration_ms: 0.203603
+  type: 'test'
+  ...
+# Subtest: portapapeles devuelve éxito solo si se escribe y permite alternativa ante rechazo
+ok 14 - portapapeles devuelve éxito solo si se escribe y permite alternativa ante rechazo
+  ---
+  duration_ms: 0.322048
+  type: 'test'
+  ...
+# Subtest: logos: solo Master escribe; lectura autenticada, validación, reemplazo, separación y persistencia
+ok 15 - logos: solo Master escribe; lectura autenticada, validación, reemplazo, separación y persistencia
+  ---
+  duration_ms: 333.340701
+  type: 'test'
+  ...
+# Subtest: migración 0.4.1 a 0.4.2 mantiene empresas y agrega logo opcional; SQL PostgreSQL parametrizado
+ok 16 - migración 0.4.1 a 0.4.2 mantiene empresas y agrega logo opcional; SQL PostgreSQL parametrizado
+  ---
+  duration_ms: 15.900329
+  type: 'test'
+  ...
+# Subtest: Acceso por empresa, creación, solicitudes, permisos delegados, fotos y revocación
+ok 17 - Acceso por empresa, creación, solicitudes, permisos delegados, fotos y revocación
+  ---
+  duration_ms: 568.892656
+  type: 'test'
+  ...
+# Subtest: SQL PostgreSQL de membresía e invitación parametrizados
+ok 18 - SQL PostgreSQL de membresía e invitación parametrizados
+  ---
+  duration_ms: 0.776223
+  type: 'test'
+  ...
+# Subtest: las máquinas se numeran solas 1..n y la numeración continúa
+ok 19 - las máquinas se numeran solas 1..n y la numeración continúa
+  ---
+  duration_ms: 80.953819
+  type: 'test'
+  ...
+# Subtest: numeración inicial personalizada y choques de número
+ok 20 - numeración inicial personalizada y choques de número
+  ---
+  duration_ms: 10.214774
+  type: 'test'
+  ...
+# Subtest: renumerar una máquina: único por equipo, el mismo número puede existir en otro equipo
+ok 21 - renumerar una máquina: único por equipo, el mismo número puede existir en otro equipo
+  ---
+  duration_ms: 10.741785
+  type: 'test'
+  ...
+# Subtest: mantención / fuera de servicio con nota, autor y fecha; se limpia al volver a disponible
+ok 22 - mantención / fuera de servicio con nota, autor y fecha; se limpia al volver a disponible
+  ---
+  duration_ms: 11.123313
+  type: 'test'
+  ...
+# Subtest: el historial conserva las notas con el número de máquina
+ok 23 - el historial conserva las notas con el número de máquina
+  ---
+  duration_ms: 4.493284
+  type: 'test'
+  ...
+# Subtest: búsqueda por número de máquina
+ok 24 - búsqueda por número de máquina
+  ---
+  duration_ms: 5.511186
+  type: 'test'
+  ...
+# Subtest: equipos por cantidad: notas de mantención / fuera de servicio
+ok 25 - equipos por cantidad: notas de mantención / fuera de servicio
+  ---
+  duration_ms: 6.201241
+  type: 'test'
+  ...
+# Subtest: migración 002 sobre una base antigua numera las unidades existentes
+ok 26 - migración 002 sobre una base antigua numera las unidades existentes
+  ---
+  duration_ms: 9.353193
+  type: 'test'
+  ...
+# Subtest: primer arranque: requiere configuración y crea el administrador
+ok 27 - primer arranque: requiere configuración y crea el administrador
+  ---
+  duration_ms: 221.320805
+  type: 'test'
+  ...
+# Subtest: seguridad: sin sesión, sin cabecera CSRF y contraseña errónea
+ok 28 - seguridad: sin sesión, sin cabecera CSRF y contraseña errónea
+  ---
+  duration_ms: 98.83187
+  type: 'test'
+  ...
+# Subtest: catálogo inicial cargado y editable
+ok 29 - catálogo inicial cargado y editable
+  ---
+  duration_ms: 19.270675
+  type: 'test'
+  ...
+# Subtest: equipo individual: unidades, códigos, series únicas y existencias
+ok 30 - equipo individual: unidades, códigos, series únicas y existencias
+  ---
+  duration_ms: 72.895799
+  type: 'test'
+  ...
+# Subtest: equipo por cantidad: validaciones y cálculo
+ok 31 - equipo por cantidad: validaciones y cálculo
+  ---
+  duration_ms: 17.506424
+  type: 'test'
+  ...
+# Subtest: listado: búsqueda, filtros, orden y paginación
+ok 32 - listado: búsqueda, filtros, orden y paginación
+  ---
+  duration_ms: 49.520768
+  type: 'test'
+  ...
+# Subtest: permisos por rol
+ok 33 - permisos por rol
+  ---
+  duration_ms: 49.824119
+  type: 'test'
+  ...
+# Subtest: edición: cambio de modalidad bloqueado con existencias; duplicar; eliminar
+ok 34 - edición: cambio de modalidad bloqueado con existencias; duplicar; eliminar
+  ---
+  duration_ms: 9.302589
+  type: 'test'
+  ...
+# Subtest: categoría con equipos no se puede eliminar
+ok 35 - categoría con equipos no se puede eliminar
+  ---
+  duration_ms: 2.835803
+  type: 'test'
+  ...
+# Subtest: fotografía: solo imágenes reales; se sirve únicamente con sesión
+ok 36 - fotografía: solo imágenes reales; se sirve únicamente con sesión
+  ---
+  duration_ms: 14.25147
+  type: 'test'
+  ...
+# Subtest: historial y panel de control reflejan datos reales
+ok 37 - historial y panel de control reflejan datos reales
+  ---
+  duration_ms: 5.090942
+  type: 'test'
+  ...
+# Subtest: cambio de contraseña
+ok 38 - cambio de contraseña
+  ---
+  duration_ms: 213.320963
+  type: 'test'
+  ...
+# Subtest: logout invalida la sesión y el limitador bloquea fuerza bruta
+ok 39 - logout invalida la sesión y el limitador bloquea fuerza bruta
+  ---
+  duration_ms: 290.673997
+  type: 'test'
+  ...
+# Subtest: migraciones: reabrir la base no reaplica nada y conserva datos
+ok 40 - migraciones: reabrir la base no reaplica nada y conserva datos
+  ---
+  duration_ms: 1.087955
+  type: 'test'
+  ...
+# Subtest: PostgreSQL traduce marcadores, fecha, SQL de búsqueda y RETURNING
+ok 41 - PostgreSQL traduce marcadores, fecha, SQL de búsqueda y RETURNING
+  ---
+  duration_ms: 2.40333
+  type: 'test'
+  ...
+# Subtest: Storage usa bucket privado, clave solo backend y operaciones correctas (HTTP simulado)
+ok 42 - Storage usa bucket privado, clave solo backend y operaciones correctas (HTTP simulado)
+  ---
+  duration_ms: 20.417799
+  type: 'test'
+  ...
+# Subtest: versiones numéricas, no comparación lexicográfica
+ok 43 - versiones numéricas, no comparación lexicográfica
+  ---
+  duration_ms: 0.968519
+  type: 'test'
+  ...
+# Subtest: versiones reales desde package.json remoto, caché y acceso exclusivo al panel Master
+ok 44 - versiones reales desde package.json remoto, caché y acceso exclusivo al panel Master
+  ---
+  duration_ms: 224.892617
+  type: 'test'
+  ...
+# Subtest: Render: latest, auditoría y bloqueo de duplicados
+ok 45 - Render: latest, auditoría y bloqueo de duplicados
+  ---
+  duration_ms: 151.902473
+  type: 'test'
+  ...
+# Subtest: Render: clear_cache, auditoría y bloqueo de duplicados
+ok 46 - Render: clear_cache, auditoría y bloqueo de duplicados
+  ---
+  duration_ms: 136.135241
+  type: 'test'
+  ...
+# Subtest: Render: rollback, auditoría y bloqueo de duplicados
+ok 47 - Render: rollback, auditoría y bloqueo de duplicados
+  ---
+  duration_ms: 134.086634
+  type: 'test'
+  ...
+# Subtest: despliegue en curso bloquea nuevas solicitudes
+ok 48 - despliegue en curso bloquea nuevas solicitudes
+  ---
+  duration_ms: 128.417488
+  type: 'test'
+  ...
+# Subtest: servicios no configurados o GitHub inaccesible no impiden usar la app
+ok 49 - servicios no configurados o GitHub inaccesible no impiden usar la app
+  ---
+  duration_ms: 128.400925
+  type: 'test'
+  ...
+# Subtest: errores de Render no filtran secretos ni se anuncian como despliegue realizado
+ok 50 - errores de Render no filtran secretos ni se anuncian como despliegue realizado
+  ---
+  duration_ms: 131.174091
+  type: 'test'
+  ...
+# Subtest: registro, aprobación, permisos reales por rol, empresas visibles y revocación de sesiones
+ok 51 - registro, aprobación, permisos reales por rol, empresas visibles y revocación de sesiones
+  ---
+  duration_ms: 285.926137
+  type: 'test'
+  ...
+# Subtest: verificación de correo con proveedor HTTP simulado, código de un solo uso y aprobación obligatoria
+ok 52 - verificación de correo con proveedor HTTP simulado, código de un solo uso y aprobación obligatoria
+  ---
+  duration_ms: 176.303245
+  type: 'test'
+  ...
+# Subtest: migración v0.3 conserva usuarios, hashes, sesiones y asigna tres roles
+ok 53 - migración v0.3 conserva usuarios, hashes, sesiones y asigna tres roles
+  ---
+  duration_ms: 11.816018
+  type: 'test'
+  ...
+# Subtest: Master edita nombres, revoca sesiones y elimina cuentas sin perder equipos ni auditoría
+ok 54 - Master edita nombres, revoca sesiones y elimina cuentas sin perder equipos ni auditoría
+  ---
+  duration_ms: 294.212788
+  type: 'test'
+  ...
+# Subtest: Master elimina solicitudes pendientes; Usuario no puede gestionar cuentas y otro Master no puede eliminarse a sí mismo
+ok 55 - Master elimina solicitudes pendientes; Usuario no puede gestionar cuentas y otro Master no puede eliminarse a sí mismo
+  ---
+  duration_ms: 246.683485
+  type: 'test'
+  ...
+1..55
+# tests 55
+# suites 0
+# pass 55
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3588.697878

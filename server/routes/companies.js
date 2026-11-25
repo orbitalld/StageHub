@@ -1,3 +1,4 @@
+import { assertCompanyFree,assertInventoryFree } from '../services/events.js';
 import { companyRole, requireCompany, isMaster } from '../company-access.js';
 import { HttpError } from '../http.js';
 import { V } from '../validate.js';
@@ -29,7 +30,7 @@ export function registerCompanyRoutes(router,{db,cfg}) {
     (SELECT COUNT(*) FROM items i WHERE i.company_id=c.id) AS item_count
     FROM companies c LEFT JOIN users u ON u.id=c.deleted_by WHERE c.deleted_at IS NOT NULL ORDER BY c.deleted_at DESC,c.id`).all());
   router.add('DELETE','/api/companies/:id',{},async c=>await tx(db,async()=>{
-    const id=Number(c.params.id); await requireCompany(db,c.user,id,'company:delete');
+    const id=Number(c.params.id); await requireCompany(db,c.user,id,'company:delete');await assertCompanyFree(db,id);
     const co=await db.prepare('SELECT name FROM companies WHERE id=? AND deleted_at IS NULL').get(id);
     await db.prepare("UPDATE companies SET deleted_at=datetime('now'),deleted_by=? WHERE id=?").run(c.user.id,id);
     // Revocar invitaciones pendientes: no reactivarlas al recuperar la empresa.
@@ -84,6 +85,8 @@ export function registerCompanyRoutes(router,{db,cfg}) {
   router.add('POST','/api/items/:id/transfer',W,async c=>await tx(db,async()=>{
     const id=Number(c.params.id), from=await selectedCompany(db,c), to=V.int(c.body,'company_id','La empresa de destino',{required:true,min:1,max:Number.MAX_SAFE_INTEGER});
     await requireItemCompany(db,id,from);
+    await assertInventoryFree(db,id);
+    if(await db.prepare("SELECT id FROM event_lines WHERE item_id=? LIMIT 1").get(id))throw new HttpError(409,"El equipo está vinculado al historial de eventos; no se puede trasladar.");
     if (from===to) throw new HttpError(409,'El equipo ya pertenece a esta empresa');
     const target=await db.prepare('SELECT * FROM companies WHERE id=? AND deleted_at IS NULL').get(to);
     if (!target) throw new HttpError(404,'Empresa de destino no encontrada');

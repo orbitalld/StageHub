@@ -18,7 +18,7 @@ async function fixture(fn,{configured=true,githubError=false,renderError=false,p
       assert.equal(opts.headers.Authorization,'Bearer fake-github-key');
       if(githubError)return response({message:'fake-github-key'},404);
       if(url.endsWith('/commits/main'))return response({sha:latest});
-      if(url.endsWith('/contents/package.json?ref='+latest))return response({encoding:'base64',content:Buffer.from('{"version":"0.4.10"}').toString('base64')});
+      if(url.endsWith('/contents/package.json?ref='+latest))return response({encoding:'base64',content:Buffer.from('{"version":"0.5.1"}').toString('base64')});
     }
     if(url.startsWith('https://api.render.com/v1/services/srv-test/')){
       assert.equal(opts.headers.Authorization,'Bearer fake-render-key');
@@ -45,7 +45,7 @@ async function fixture(fn,{configured=true,githubError=false,renderError=false,p
 test('versiones numéricas, no comparación lexicográfica',()=>{assert.equal(compareVersions('0.4.10','0.4.8'),1);assert.equal(compareVersions('1.0.0','0.99.99'),1);assert.equal(compareVersions('0.4.8','0.4.8'),0);assert.equal(compareVersions('0.4.7','0.4.8'),-1);assert.equal(compareVersions('invalid','0.4.8'),null);});
 test('versiones reales desde package.json remoto, caché y acceso exclusivo al panel Master',()=>fixture(async(call,app,calls)=>{
   assert.equal((await call('anon','GET','/api/system/version')).status,401);
-  const v=await call('member','GET','/api/system/version');assert.equal(v.status,200);assert.equal(v.json.installed,'0.4.8');assert.equal(v.json.latest,'0.4.10');assert.equal(v.json.update_available,true);assert.equal(v.json.latest_commit,undefined);
+  const v=await call('member','GET','/api/system/version');assert.equal(v.status,200);assert.equal(v.json.installed,'0.5.0');assert.equal(v.json.latest,'0.5.1');assert.equal(v.json.update_available,true);assert.equal(v.json.latest_commit,undefined);
   assert.equal((await call('member','GET','/api/system/status')).status,403);
   for(const mode of ['latest','clear_cache','rollback'])assert.equal((await call('member','POST','/api/system/deploy',{mode,confirm:true})).status,403);
   assert.equal(calls.length,2);

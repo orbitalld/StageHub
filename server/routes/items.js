@@ -1,3 +1,4 @@
+import { assertInventoryFree } from '../services/events.js';
 import { requirePhotoCompany, isMaster } from '../company-access.js';
 import * as inv from '../services/inventory.js';
 import { HttpError } from '../http.js';
@@ -10,7 +11,7 @@ export function registerItemRoutes(router, ctx) {
   const id = c => Number(c.params.id);
   const scoped = (fn, kind=null) => async c => {
     const companyId=await selectedCompany(db,c,c.req.method==='GET'?'inventory:read':'inventory:write');
-    if(kind) await requireItemCompany(db,id(c),companyId,kind==='unit');
+    if(kind) {await requireItemCompany(db,id(c),companyId,kind==='unit'); if(c.req.method!=='GET'){const itemId=kind==='unit'?(await db.prepare('SELECT item_id FROM units WHERE id=?').get(id(c))).item_id:id(c);await assertInventoryFree(db,itemId);if(kind==='item'&&c.req.method==='DELETE'&&await db.prepare("SELECT id FROM event_lines WHERE item_id=? LIMIT 1").get(itemId))throw new HttpError(409,"El equipo está vinculado a eventos; conserva su registro.");}}
     c.user={...c.user,company_id:companyId};
     if(['POST','PUT'].includes(c.req.method)&&c.body.photo) { if (typeof c.body.photo==='string' && !PHOTO_RE.test(c.body.photo)) throw new HttpError(422,'Fotografía inválida'); await requirePhotoCompany(db,companyId,c.body.photo); }
     return await fn(c,companyId);

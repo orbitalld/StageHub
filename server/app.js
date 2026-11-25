@@ -1,3 +1,4 @@
+import { registerEventRoutes } from './routes/events.js';
 import { companyRole, photoAllowed } from './company-access.js';
 import { registerMembershipRoutes } from './routes/memberships.js';
 // Construye la aplicación: base de datos, rutas, seguridad y archivos estáticos.
@@ -59,6 +60,7 @@ export async function createApp(cfg) {
   registerCompanyRoutes(router, ctx);
   registerMembershipRoutes(router,ctx);
   registerSystemRoutes(router,ctx);
+  registerEventRoutes(router,ctx);
 
   const cookieBase = `Path=/; HttpOnly; SameSite=Lax${cfg.secureCookies ? '; Secure' : ''}`;
 

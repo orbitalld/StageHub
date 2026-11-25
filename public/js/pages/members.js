@@ -1,12 +1,14 @@
-import { get,post,put,del } from '../api.js?v=0.4.8';
-import { state,can } from '../state.js?v=0.4.8';
-import { h,field,guarded,toast,confirmDialog,clear } from '../ui.js?v=0.4.8';
+import {eventRequestsSection} from './events.js?v=0.5.0';
+import { get,post,put,del } from '../api.js?v=0.5.0';
+import { state,can } from '../state.js?v=0.5.0';
+import { h,field,guarded,toast,confirmDialog,clear } from '../ui.js?v=0.5.0';
 export const roles={reader:'Solo lectura',inventory:'Gestión de inventario',members:'Gestión de usuarios (inventario solo lectura)',manager:'Inventario y usuarios',owner:'Propietario',master:'Master global'};
 export const roleSelect=(value,options=['reader','inventory','members','manager'])=>h('select',{value},options.map(r=>h('option',{value:r},roles[r])));
 export async function requestsPage(el){
  const rows=await get('/api/requests');el.append(h('h1',{},'Solicitudes'),h('p',{class:'muted'},'Invitaciones a empresas. Acepta únicamente las que reconozcas.'));
  if(!rows.length)el.append(h('p',{class:'muted'},'No tienes solicitudes pendientes.'));
  for(const r of rows){const err=h('div',{class:'error-box',hidden:true});const respond=decision=>async()=>{try{await post(`/api/requests/${r.id}/respond`,{decision});toast(decision==='accepted'?'Invitación aceptada':'Invitación rechazada');location.reload();}catch(e){err.hidden=false;err.textContent=e.message;}};el.append(h('section',{class:'card stack',style:{marginBottom:'12px'}},h('h2',{},r.company_name),h('p',{},`Invitación de ${r.sender_name} · ${roles[r.member_role]}`),err,h('div',{class:'row wrap'},h('button',{class:'btn primary',onclick:respond('accepted')},'Aceptar'),h('button',{class:'btn',onclick:respond('declined')},'Rechazar'))));}
+ await eventRequestsSection(el);
 }
 export async function membersPage(el,[id]){
  const co=state.companies.find(c=>c.id===Number(id));if(!co)throw new Error('Empresa no disponible');

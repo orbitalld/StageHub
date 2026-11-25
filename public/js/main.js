@@ -1,25 +1,31 @@
-import { get, post } from './api.js?v=0.4.8';
-import { state, selectCompany, can } from './state.js?v=0.4.8';
-import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.4.8';
-import dashboardPage from './pages/dashboard.js?v=0.4.8';
-import inventoryPage from './pages/inventory.js?v=0.4.8';
-import itemPage from './pages/item.js?v=0.4.8';
-import categoriesPage from './pages/categories.js?v=0.4.8';
-import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.4.8';
-import usersPage from './pages/users.js?v=0.4.8';
-import { membersPage, requestsPage } from './pages/members.js?v=0.4.8';
+import eventsPage, {eventPage,availabilityPage,eventPermissionsPage,eventTrashPage} from './pages/events.js?v=0.5.0';
+import { get, post } from './api.js?v=0.5.0';
+import { state, selectCompany, can } from './state.js?v=0.5.0';
+import { h, icon, clear, toast, modal, field, guarded } from './ui.js?v=0.5.0';
+import dashboardPage from './pages/dashboard.js?v=0.5.0';
+import inventoryPage from './pages/inventory.js?v=0.5.0';
+import itemPage from './pages/item.js?v=0.5.0';
+import categoriesPage from './pages/categories.js?v=0.5.0';
+import companiesPage, { overviewPage, trashPage } from './pages/companies.js?v=0.5.0';
+import usersPage from './pages/users.js?v=0.5.0';
+import { membersPage, requestsPage } from './pages/members.js?v=0.5.0';
 
-import systemPage, { versionIndicator } from './pages/system.js?v=0.4.8';
+import systemPage, { versionIndicator } from './pages/system.js?v=0.5.0';
 
 const root = document.getElementById('app');
 
 function brand(compact = false) {
   return h('div', { class: 'brand' + (compact ? ' brand-compact' : '') },
-    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.4.8', alt: '', width: 44, height: 44 }),
-    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.4.8', alt: 'StageHub' }));
+    h('img', { class: 'brand-emblem', src: '/assets/stagehub-emblem.png?v=0.5.0', alt: '', width: 44, height: 44 }),
+    h('img', { class: 'brand-wordmark', src: '/assets/stagehub-wordmark.png?v=0.5.0', alt: 'StageHub' }));
 }
 
 const ROUTES = [
+  [/^#\/events\/availability$/, availabilityPage, 'events'],
+  [/^#\/events\/trash$/, eventTrashPage, 'events'],
+  [/^#\/events\/permissions\/(\d+)$/, eventPermissionsPage, 'events'],
+  [/^#\/events\/(\d+)$/, eventPage, 'events'],
+  [/^#\/events$/, eventsPage, 'events'],
   [/^#\/system$/, systemPage, 'system'],
   [/^#\/companies\/trash$/, trashPage, 'companies'],
   [/^#\/requests$/, requestsPage, 'requests'],
@@ -35,6 +41,7 @@ const ROUTES = [
 const NAV = [
   ['dashboard', 'Panel principal', 'dashboard', '#/dashboard'],
   ['companies', 'Empresas', 'building', '#/companies'],
+  ['events', 'Eventos', 'calendar', '#/events'],
   ['requests', 'Solicitudes', 'user', '#/requests'],
   ['users', 'Administración de usuarios', 'lock', '#/users'],
   ['system', 'Administración del sistema', 'lock', '#/system'],
@@ -91,7 +98,7 @@ let shell, content, navLinks;
 
 async function renderShell() {
   try { state.companies = await get('/api/companies'); } catch(e){return renderFatal(e.message);}
-  if(!state.companies.length&&!['#/dashboard','#/companies','#/companies/trash','#/requests','#/users','#/system'].includes(location.hash))location.hash='#/dashboard';
+  if(!state.companies.length&&!['#/dashboard','#/companies','#/companies/trash','#/requests','#/users','#/system','#/events'].includes(location.hash))location.hash='#/dashboard';
   const stored=Number(sessionStorage.getItem('stagehub-company') || 1);
   state.companyId=state.companies.some(c=>c.id===stored)?stored:state.companies[0]?.id || 0;
   navLinks = {};

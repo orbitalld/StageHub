@@ -1,7 +1,7 @@
 // Adaptador PostgreSQL asíncrono. Mantiene la API prepare/get/all/run de StageHub.
 import fs from 'node:fs';
 
-const ID_TABLES = new Set(['users','categories','subcategories','items','units','audit_log','companies','company_invitations']);
+const ID_TABLES = new Set(['users','categories','subcategories','items','units','audit_log','companies','company_invitations','events','event_lines','event_pieces']);
 export function compileSql(input, args = [], mode = 'all') {
   let sql = input.trim()
     .replace(/datetime\('now'\)/gi, 'CURRENT_TIMESTAMP')
